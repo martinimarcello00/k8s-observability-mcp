@@ -61,3 +61,5 @@ Then connect with your MCP client to use the tools.
 ## Notes
 
 - Uses your default kubeconfig. Set TARGET_NAMESPACE in .env to scope queries.
+
+- 🕸️ Service graph docs: see `service-graph/README.md` for how the Neo4j service graph is built (Jaeger CALLS + static USES), how to load it, and the result image.
