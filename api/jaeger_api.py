@@ -126,7 +126,7 @@ class JaegerAPI(BaseK8sClient):
 
         if not traces:
             logging.warning(f"No traces found for service '{service}' with lookback '{lookback}'.")
-            results["error"] = "No traces found"
+            results["info"] = f"No traces found for service '{service}' with lookback '{lookback}'."
             return results
 
         for trace in traces:
@@ -199,7 +199,7 @@ class JaegerAPI(BaseK8sClient):
 
         if not traces:
             logging.warning(f"No slow traces found for service '{service}' with min duration {min_duration_ms}ms")
-            results["error"] = "No traces found"
+            results["info"] = f"No traces found for service '{service}' with a minimum duration of {min_duration_ms}ms in the last {lookback}."
             return results
 
         # Process and return only the slow traces

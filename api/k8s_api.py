@@ -24,7 +24,8 @@ class K8sAPI(BaseK8sClient):
             A JSON string listing problematic pods and their issues.
         """
         
-        report = {"problematic_pods": []}
+        report = {}
+        report["problematic_pods"] = []
         
         try:
             pod_list = self.k8s_client.list_namespaced_pod(self.namespace)
@@ -94,6 +95,9 @@ class K8sAPI(BaseK8sClient):
                     "pod_phase": pod.status.phase,
                     "container_issues": pod_issues
                 })
+
+        if len(report["problematic_pods"]) == 0:
+            report["info"] = "No problematic pods detected based on status analysis. All pods appear healthy."
                 
         return report
 
