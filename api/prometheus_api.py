@@ -199,6 +199,7 @@ class PrometheusAPI(BaseK8sClient):
         pod_data = self.get_pod_metrics(pod_name)
         
         triage_result = {
+            "pod_name" : pod_name,
             "is_anomalous": False,
             "reasons": [],
             "checked_metrics": pod_data.get("metrics", {})
