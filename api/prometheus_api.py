@@ -219,3 +219,70 @@ class PrometheusAPI(BaseK8sClient):
                 results["metrics"][metric] = f"Error: {str(e)}"
 
         return results
+    
+    def get_pod_triage_metrics(self, pod_name: str) -> Dict[str, Any]:
+        """
+        Performs a simple triage based on universal, instant metrics without pod specs.
+
+        This function checks for clear, high-confidence anomaly signals that do not require
+        knowledge of the pod's resource limits. It's designed for a quick first-pass
+        health check.
+
+        Args:
+            pod_name (str): The name of the pod to triage.
+
+        Returns:
+            dict: A dictionary containing the triage result.
+                  {'is_anomalous': bool, 'reasons': [str], 'checked_metrics': {}}
+        """
+        pod_data = self.get_pod_metrics(pod_name)
+        
+        triage_result = {
+            "is_anomalous": False,
+            "reasons": [],
+            "checked_metrics": pod_data.get("metrics", {})
+        }
+
+        if "error" in pod_data:
+            triage_result["is_anomalous"] = True
+            triage_result["reasons"].append(pod_data["error"])
+            return triage_result
+
+        metrics = pod_data.get("metrics", {})
+
+        # Triage Rule 1: Thread Saturation
+        threads = metrics.get("container_threads")
+        threads_max = metrics.get("container_threads_max")
+        if threads is not None and threads_max is not None and threads_max > 0:
+            thread_ratio = threads / threads_max
+            if thread_ratio > 0.95:
+                triage_result["is_anomalous"] = True
+                triage_result["reasons"].append(
+                    f"CRITICAL: Thread usage is at {thread_ratio:.2%} of the maximum ({int(threads)}/{int(threads_max)}). Application may hang or crash."
+                )
+
+        # Triage Rule 2: High CPU Load
+        cpu_load = metrics.get("container_cpu_load_average_10s")
+        if cpu_load is not None and cpu_load > 10.0:
+            triage_result["is_anomalous"] = True
+            triage_result["reasons"].append(
+                f"WARNING: High CPU load average of {cpu_load:.2f}. The CPU is likely saturated, causing high latency."
+            )
+
+        # Triage Rule 3: Network Errors & Drops
+        # This checks if any errors have occurred during the pod's lifetime.
+        network_checks = {
+            "container_network_receive_errors_total": "receive errors",
+            "container_network_transmit_errors_total": "transmit errors",
+            "container_network_receive_packets_dropped_total": "dropped received packets",
+            "container_network_transmit_packets_dropped_total": "dropped transmitted packets",
+        }
+        for metric, description in network_checks.items():
+            value = metrics.get(metric)
+            if value is not None and value > 1:
+                triage_result["is_anomalous"] = True
+                triage_result["reasons"].append(
+                    f"INFO: Pod has a history of {int(value)} network {description}."
+                )
+
+        return triage_result
