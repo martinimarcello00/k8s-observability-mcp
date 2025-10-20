@@ -7,45 +7,6 @@ class LogAPI(BaseK8sClient):
         # Initialize pod and service lists using inherited methods
         self.pods = self.get_pods_list()
         self.services = self.get_services_list()
-
-    def get_pods_from_service(self, service: str):
-        """Return all the pods connected to a service"""
-        results = {
-            "service_name": service,
-            "namespace": self.namespace,
-            "pods": []
-        }
-        
-        if service not in self.services:
-            results["error"] = f"The service {service} does not exist in the {self.namespace} namespace."
-            return results
-        
-        try:
-            requested_svc = self.k8s_client.read_namespaced_service(service, self.namespace)
-            # Kubernetes objects have complex types, use type: ignore
-            if not hasattr(requested_svc, 'spec') or not hasattr(requested_svc.spec, 'selector'):  # type: ignore
-                results["error"] = f"Service {service} does not have a valid selector."
-                return results
-                
-            selector = requested_svc.spec.selector  # type: ignore
-            if not selector:
-                results["error"] = f"Service {service} has no selector configured."
-                return results
-                
-            label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
-            pods = self.k8s_client.list_namespaced_pod(self.namespace, label_selector=label_selector)
-            
-            results["pods"] = [
-                {
-                    "pod_name": pod.metadata.name,  # type: ignore
-                    "pod_status": pod.status.phase  # type: ignore
-                }
-                for pod in pods.items  # type: ignore
-            ]
-        except Exception as e:
-            results["error"] = f"Failed to get pods for service {service}: {str(e)}"
-            
-        return results
     
     def get_pod_logs(self, pod_name: str, tail: int = 100, important: bool = True) -> str:
         # Check if the pod exists

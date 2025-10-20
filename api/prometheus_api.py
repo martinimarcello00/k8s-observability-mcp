@@ -74,45 +74,6 @@ class PrometheusAPI(BaseK8sClient):
         # Get list of pods and services using inherited methods
         self.pods = self.get_pods_list()
         self.services = self.get_services_list()
-
-    def get_pods_from_service(self, service: str):
-        """Return all the pods connected to a service"""
-        results = {
-            "service_name": service,
-            "namespace": self.namespace,
-            "pods": []
-        }
-        
-        # Check if the service exists
-        if service not in self.services:
-            results["error"] = f"The service {service} does not exist in the {self.namespace} namespace."
-            return results
-        
-        try:
-            # Get the service
-            requested_svc = self.k8s_client.read_namespaced_service(service, self.namespace)
-            # Get the service's selectors
-            selector = requested_svc.spec.selector  # type: ignore
-            if not selector:
-                results["error"] = f"Service {service} has no selector configured."
-                return results
-                
-            # Prepare the label selectors to query all the pods connected to that service
-            label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
-            # Get the pods with the corresponding label selector
-            pods = self.k8s_client.list_namespaced_pod(self.namespace, label_selector=label_selector)
-            
-            results["pods"] = [
-                {
-                    "pod_name": pod.metadata.name,  # type: ignore
-                    "pod_status": pod.status.phase  # type: ignore
-                }
-                for pod in pods.items  # type: ignore
-            ]
-        except Exception as e:
-            results["error"] = f"Failed to get pods for service {service}: {str(e)}"
-            
-        return results
     
     def get_pod_metrics(self, pod_name: str) -> Dict[str, Any]:
         """
