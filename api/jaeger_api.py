@@ -13,21 +13,27 @@ class JaegerAPI(BaseK8sClient):
         super().__init__(namespace=None)
         self.services = self.get_services_list()
     
-    def get_jaeger_traces(self, service: str, limit: int = 20, lookback: str = "5m"):
-        """Fetches traces from the Jaeger Query API."""
+    def get_jaeger_traces(self, service: str, limit: int = 20, lookback: str = "15m", min_latency_ms: Optional[float] = None, only_errors: bool = False):
+        """Fetches traces from the Jaeger Query API, optionally filtering by minimum latency (ms) and error traces using Jaeger API parameters."""
         logging.info(f"Querying Jaeger for '{service}' traces...")
         api_url = f"{self.jaeger_url}/api/traces"
-        
+
         params = {
-            "service": service, # name of the service to query traces for
-            "limit": limit, # maximum number of traces to return
-            "lookback": lookback, # time duration to look back (e.g., "1h", "30m")
+            "service": service,
+            "limit": limit,
+            "lookback": lookback,
         }
+
+        if min_latency_ms is not None:
+            params["minDuration"] = f"{int(min_latency_ms)}ms"
+        if only_errors:
+            params["tags"] = '{"error":"true"}'
 
         try:
             response = requests.get(api_url, params=params)
-            response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
-            return response.json()["data"]
+            response.raise_for_status()
+            traces = response.json().get("data", [])
+            return traces
         except requests.exceptions.RequestException as e:
             logging.error(f"Error connecting to Jaeger: {e}")
             return None
@@ -101,7 +107,7 @@ class JaegerAPI(BaseK8sClient):
         
         return result
     
-    def get_processed_traces(self, service: str, limit: int = 20, lookback: str = "5m", only_errors: bool = False) -> Dict[str, Any]:
+    def get_processed_traces(self, service: str, limit: int = 20, lookback: str = "15m", only_errors: bool = False) -> Dict[str, Any]:
         results = {}
 
         if service not in self.services:
@@ -110,24 +116,22 @@ class JaegerAPI(BaseK8sClient):
 
         results["service"] = service
         results["traces"] = []
-        
-        traces = self.get_jaeger_traces(service, limit, lookback)
-        
+
+        traces = self.get_jaeger_traces(service, limit, lookback, only_errors=only_errors)
+
         if traces is None:
             logging.error(f"Failed to retrieve traces for service '{service}'. Check Jaeger connectivity and service name.")
             results["error"] = "Failed to fetch traces from Jaeger"
             return results
-        
+
         if not traces:
             logging.warning(f"No traces found for service '{service}' with lookback '{lookback}'.")
             results["error"] = "No traces found"
             return results
-        
+
         for trace in traces:
             trace_data = self.process_trace(trace)
             if trace_data:
-                if only_errors and not trace_data["has_error"]:
-                    continue
                 results["traces"].append(trace_data)
 
         results["traces_count"] = len(results["traces"])
@@ -155,5 +159,50 @@ class JaegerAPI(BaseK8sClient):
         except (KeyError, IndexError) as e:
             logging.error(f"Unexpected response format from Jaeger: {e}")
             return None
-        
-    # TODO: Implement function to filter metrics by minduration or affected by errors
+    
+    def get_slow_traces(
+        self,
+        service: str,
+        min_duration_ms: float,
+        limit: int = 30,
+        lookback: str = "15m",
+        only_errors: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        Args:
+            service: Name of the service to query
+            min_duration_ms: Minimum latency threshold in milliseconds
+            limit: Maximum number of traces to return
+            lookback: Time duration to look back (e.g., "1h", "30m", "5m")
+            only_errors: If True, only return traces with errors
+        Returns:
+            List of processed trace dictionaries with high latency
+        """
+        if service not in self.services:
+            logging.error(f"Service '{service}' does not exist")
+            return []
+
+        # Fetch traces using Jaeger's native duration and error filter
+        traces = self.get_jaeger_traces(
+            service=service,
+            limit=limit,
+            lookback=lookback,
+            min_latency_ms=min_duration_ms,
+            only_errors=only_errors
+        )
+
+        if not traces:
+            logging.warning(f"No slow traces found for service '{service}' with min duration {min_duration_ms}ms")
+            return []
+
+        # Process and return only the slow traces
+        processed_traces = []
+        for trace in traces:
+            trace_data = self.process_trace(trace)
+            if trace_data:
+                processed_traces.append(trace_data)
+
+        # Sort by latency (slowest first)
+        processed_traces.sort(key=lambda x: x["latency_ms"], reverse=True)
+
+        return processed_traces
