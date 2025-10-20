@@ -1,5 +1,5 @@
 from typing import Optional
-from base_k8s_client import BaseK8sClient
+from .base_k8s_client import BaseK8sClient
 
 class LogAPI(BaseK8sClient):
     def __init__(self, namespace: Optional[str] = None):

@@ -2,8 +2,8 @@ from prometheus_api_client import PrometheusConnect
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
-from base_k8s_client import BaseK8sClient
-from config_manager import ConfigManager
+from .base_k8s_client import BaseK8sClient
+from .config_manager import ConfigManager
 
 class PrometheusAPI(BaseK8sClient):
 

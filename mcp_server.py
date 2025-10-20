@@ -3,11 +3,11 @@ import logging
 from pydantic import Field
 from typing import Literal
 from typing_extensions import Annotated
-from config_manager import ConfigManager
-from prometheus_api import PrometheusAPI
-from log_api import LogAPI
-from jaeger_api import JaegerAPI
-from datagraph import DataGraph
+from api.config_manager import ConfigManager
+from api.prometheus_api import PrometheusAPI
+from api.log_api import LogAPI
+from api.jaeger_api import JaegerAPI
+from api.datagraph import DataGraph
 
 # Global instances - initialized lazily
 prometheus_api = None

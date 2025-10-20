@@ -1,8 +1,8 @@
 import requests
 import logging
 from typing import Optional, Dict, List, Any
-from base_k8s_client import BaseK8sClient
-from config_manager import ConfigManager
+from .base_k8s_client import BaseK8sClient
+from .config_manager import ConfigManager
 
 class JaegerAPI(BaseK8sClient):
     def __init__(self, jaeger_url: Optional[str] = None):

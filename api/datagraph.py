@@ -2,7 +2,7 @@ from neo4j import GraphDatabase
 import os
 import logging
 from typing import Optional
-from config_manager import ConfigManager
+from .config_manager import ConfigManager
 
 class DataGraph():
     def __init__(self, uri: Optional[str] = None, username: Optional[str] = None, pw: Optional[str] = None) -> None:
