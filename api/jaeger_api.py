@@ -167,7 +167,7 @@ class JaegerAPI(BaseK8sClient):
         limit: int = 30,
         lookback: str = "15m",
         only_errors: bool = False
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Args:
             service: Name of the service to query
@@ -178,9 +178,15 @@ class JaegerAPI(BaseK8sClient):
         Returns:
             List of processed trace dictionaries with high latency
         """
+
+        results = {}
+
         if service not in self.services:
-            logging.error(f"Service '{service}' does not exist")
-            return []
+            results["error"] = f"The service {service} does not exist"
+            return results
+
+        results["service"] = service
+        results["traces"] = []
 
         # Fetch traces using Jaeger's native duration and error filter
         traces = self.get_jaeger_traces(
@@ -193,16 +199,18 @@ class JaegerAPI(BaseK8sClient):
 
         if not traces:
             logging.warning(f"No slow traces found for service '{service}' with min duration {min_duration_ms}ms")
-            return []
+            results["error"] = "No traces found"
+            return results
 
         # Process and return only the slow traces
-        processed_traces = []
         for trace in traces:
             trace_data = self.process_trace(trace)
             if trace_data:
-                processed_traces.append(trace_data)
+                results["traces"].append(trace_data)
 
         # Sort by latency (slowest first)
-        processed_traces.sort(key=lambda x: x["latency_ms"], reverse=True)
+        results["traces"].sort(key=lambda x: x["latency_ms"], reverse=True)
 
-        return processed_traces
+        results["traces_count"] = len(results["traces"])
+
+        return results
