@@ -92,6 +92,55 @@ class BaseK8sClient(ABC):
             
         return results
     
+    def get_services_from_pod(self, pod_name: str):
+        """Return the service(s) that select a given pod."""
+
+        results = {
+            "pod_name": pod_name,
+            "namespace": self.namespace,
+            "services": []
+        }
+        
+        if pod_name not in self.get_pods_list():
+            results["error"] = f"The pod {pod_name} does not exist in the {self.namespace} namespace."
+            return results
+        
+        try:
+            # Get the pod and its labels
+            pod = self.k8s_client.read_namespaced_pod(pod_name, self.namespace)
+            pod_labels = pod.metadata.labels  # type: ignore
+            
+            if not pod_labels:
+                results["error"] = f"Pod {pod_name} has no labels."
+                return results
+            
+            # Get all services in the namespace
+            service_list = self.k8s_client.list_namespaced_service(self.namespace)
+            
+            # Check which services select this pod
+            for service in service_list.items:  # type: ignore
+                if not hasattr(service, 'spec') or not hasattr(service.spec, 'selector'):  # type: ignore
+                    continue
+                
+                selector = service.spec.selector  # type: ignore
+                if not selector:
+                    continue
+                
+                # Check if all selector labels match the pod's labels
+                if all(pod_labels.get(k) == v for k, v in selector.items()):
+                    results["services"].append({
+                        "service_name": service.metadata.name,  # type: ignore
+                        "selector": selector
+                    })
+            
+            if not results["services"]:
+                results["info"] = f"No services found selecting pod {pod_name}."
+                
+        except Exception as e:
+            results["error"] = f"Failed to get services for pod {pod_name}: {str(e)}"
+            
+        return results
+    
     def refresh_cache(self):
         """Refresh the cached services and pods"""
         self._services_cache = None
