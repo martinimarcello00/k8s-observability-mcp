@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/martinimarcello00-k8s-observability-mcp-badge.png)](https://mseep.ai/app/martinimarcello00-k8s-observability-mcp)
+
 # ☸️ K8s Observability MCP
 
 Small MCP server that lets you explore Kubernetes metrics, logs, traces, and service graph data via simple tools.
