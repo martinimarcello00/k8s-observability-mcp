@@ -1,5 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 import logging
+import sys
+import os
 from pydantic import Field
 from typing import Literal
 from typing_extensions import Annotated
@@ -57,7 +59,7 @@ mcp = FastMCP("Cluster API MCP")
 
 @mcp.tool(
     title="get_metrics",
-    description="Retrieve all instant Prometheus metrics for a specific Kubernetes pod or service. Returns comprehensive metrics including CPU, memory, network, and container specifications."
+    description="Retrieve all instant Prometheus metrics for a specific Kubernetes pod or service. Returns comprehensive metrics including CPU, memory, network, and container specifications.",
 )
 def get_metrics(
     resource_name: Annotated[str, Field(description="The exact name of the Kubernetes resource to retrieve metrics for.")],
@@ -254,4 +256,34 @@ if __name__ == "__main__":
     config_manager = ConfigManager()
     config = config_manager.config
     logging.info(f"Target namespace: {config.target_namespace}")
-    mcp.run(transport="streamable-http")
+    
+    # Determine transport mode with priority: CLI arg > environment variable > default
+    # Default: stdio (works with langchain-mcp-adapters subprocess spawning)
+    # Alternative: streamable-http (works with pre-running HTTP server on localhost:8000)
+    transport = "stdio"
+    
+    # Check environment variable first: MCP_TRANSPORT=stdio|http|streamable-http
+    env_transport = os.environ.get("MCP_TRANSPORT", "").lower()
+    if env_transport:
+        # Normalize "http" to "streamable-http"
+        if env_transport == "http":
+            env_transport = "streamable-http"
+        if env_transport in ("stdio", "streamable-http"):
+            transport = env_transport
+            logging.info(f"Transport set from MCP_TRANSPORT env var: {transport}")
+    
+    # Check command-line arguments: --transport stdio|http|streamable-http
+    # This takes precedence over environment variable
+    if "--transport" in sys.argv:
+        idx = sys.argv.index("--transport")
+        if idx + 1 < len(sys.argv):
+            arg_transport = sys.argv[idx + 1].lower()
+            # Normalize "http" to "streamable-http"
+            if arg_transport == "http":
+                arg_transport = "streamable-http"
+            if arg_transport in ("stdio", "streamable-http"):
+                transport = arg_transport
+                logging.info(f"Transport set from CLI argument: {transport}")
+    
+    logging.info(f"Starting MCP server with transport: {transport}")
+    mcp.run(transport=transport)
