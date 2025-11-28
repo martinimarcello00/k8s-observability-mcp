@@ -1,0 +1,75 @@
+// 1. Create Application Services
+// Based on the nodes visible in the Jaeger trace view
+MERGE (s:Service {name: 'frontend-web'});
+MERGE (s:Service {name: 'frontend-proxy'});
+MERGE (s:Service {name: 'frontend'});
+MERGE (s:Service {name: 'image-provider'});
+MERGE (s:Service {name: 'recommendation'});
+MERGE (s:Service {name: 'product-catalog'});
+MERGE (s:Service {name: 'cart'});
+MERGE (s:Service {name: 'email'});
+MERGE (s:Service {name: 'payment'});
+MERGE (s:Service {name: 'fraud-detection'});
+MERGE (s:Service {name: 'shipping'});
+MERGE (s:Service {name: 'currency'});
+MERGE (s:Service {name: 'ad'});
+MERGE (s:Service {name: 'checkout'});
+MERGE (s:Service {name: 'quote'});
+
+// 2. Create Relationships
+// Top level entry points
+MATCH (web:Service {name: 'frontend-web'}), (proxy:Service {name: 'frontend-proxy'})
+MERGE (web)-[:CALLS]->(proxy);
+
+// Frontend Proxy breakdown
+MATCH (proxy:Service {name: 'frontend-proxy'}), (frontend:Service {name: 'frontend'})
+MERGE (proxy)-[:CALLS]->(frontend);
+
+MATCH (proxy:Service {name: 'frontend-proxy'}), (img:Service {name: 'image-provider'})
+MERGE (proxy)-[:CALLS]->(img);
+
+// Frontend Service calls
+MATCH (frontend:Service {name: 'frontend'}), (rec:Service {name: 'recommendation'})
+MERGE (frontend)-[:CALLS]->(rec);
+
+MATCH (frontend:Service {name: 'frontend'}), (cart:Service {name: 'cart'})
+MERGE (frontend)-[:CALLS]->(cart);
+
+MATCH (frontend:Service {name: 'frontend'}), (checkout:Service {name: 'checkout'})
+MERGE (frontend)-[:CALLS]->(checkout);
+
+MATCH (frontend:Service {name: 'frontend'}), (ad:Service {name: 'ad'})
+MERGE (frontend)-[:CALLS]->(ad);
+
+MATCH (frontend:Service {name: 'frontend'}), (curr:Service {name: 'currency'})
+MERGE (frontend)-[:CALLS]->(curr);
+
+// Recommendation Service calls
+MATCH (rec:Service {name: 'recommendation'}), (prod:Service {name: 'product-catalog'})
+MERGE (rec)-[:CALLS]->(prod);
+
+// Checkout Service calls
+MATCH (checkout:Service {name: 'checkout'}), (prod:Service {name: 'product-catalog'})
+MERGE (checkout)-[:CALLS]->(prod);
+
+MATCH (checkout:Service {name: 'checkout'}), (cart:Service {name: 'cart'})
+MERGE (checkout)-[:CALLS]->(cart);
+
+MATCH (checkout:Service {name: 'checkout'}), (email:Service {name: 'email'})
+MERGE (checkout)-[:CALLS]->(email);
+
+MATCH (checkout:Service {name: 'checkout'}), (pay:Service {name: 'payment'})
+MERGE (checkout)-[:CALLS]->(pay);
+
+MATCH (checkout:Service {name: 'checkout'}), (fraud:Service {name: 'fraud-detection'})
+MERGE (checkout)-[:CALLS]->(fraud);
+
+MATCH (checkout:Service {name: 'checkout'}), (ship:Service {name: 'shipping'})
+MERGE (checkout)-[:CALLS]->(ship);
+
+MATCH (checkout:Service {name: 'checkout'}), (curr:Service {name: 'currency'})
+MERGE (checkout)-[:CALLS]->(curr);
+
+// Shipping Service calls
+MATCH (ship:Service {name: 'shipping'}), (quote:Service {name: 'quote'})
+MERGE (ship)-[:CALLS]->(quote);
