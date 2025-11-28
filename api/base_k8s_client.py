@@ -4,6 +4,8 @@ import os
 import logging
 from typing import Optional
 
+logger = logging.getLogger(__name__)
+
 class BaseK8sClient(ABC):
     """Base class for Kubernetes API interactions"""
     
@@ -21,7 +23,7 @@ class BaseK8sClient(ABC):
                 config.load_kube_config()
                 self._k8s_client = client.CoreV1Api()
             except Exception as e:
-                logging.error(f"Failed to initialize Kubernetes client: {e}")
+                logger.error(f"Failed to initialize Kubernetes client: {e}")
                 raise
         return self._k8s_client
     
@@ -36,7 +38,7 @@ class BaseK8sClient(ABC):
                 
                 self._services_cache = [service.metadata.name for service in service_list.items]
             except Exception as e:
-                logging.error(f"Failed to get services list: {e}")
+                logger.error(f"Failed to get services list: {e}")
                 return []
         
         return self._services_cache
@@ -48,7 +50,7 @@ class BaseK8sClient(ABC):
                 pod_list = self.k8s_client.list_namespaced_pod(self.namespace)
                 self._pods_cache = [pod.metadata.name for pod in pod_list.items]
             except Exception as e:
-                logging.error(f"Failed to get pods list: {e}")
+                logger.error(f"Failed to get pods list: {e}")
                 return []
         
         return self._pods_cache

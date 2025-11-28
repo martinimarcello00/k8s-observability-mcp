@@ -5,6 +5,8 @@ from typing import Optional, Dict, List, Any
 from .base_k8s_client import BaseK8sClient
 from .config_manager import ConfigManager
 
+logger = logging.getLogger(__name__)
+
 class PrometheusAPI(BaseK8sClient):
 
     normal_metrics = [
@@ -66,7 +68,7 @@ class PrometheusAPI(BaseK8sClient):
         try:
             self.prometheusClient = PrometheusConnect(self.url, disable_ssl=True)
         except Exception as e:
-            logging.error("Error connecting to prometheus server: ", e)
+            logger.error("Error connecting to prometheus server: ", e)
         
         # Initialize base class with namespace
         super().__init__(namespace)

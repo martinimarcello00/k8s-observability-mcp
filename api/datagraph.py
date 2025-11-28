@@ -4,6 +4,8 @@ import logging
 from typing import Optional
 from .config_manager import ConfigManager
 
+logger = logging.getLogger(__name__)
+
 class DataGraph():
     def __init__(self, uri: Optional[str] = None, username: Optional[str] = None, pw: Optional[str] = None) -> None:
         # Use ConfigManager if parameters not provided
@@ -22,14 +24,14 @@ class DataGraph():
         try:
             self.driver = GraphDatabase.driver(uri=uri, auth=auth)
         except Exception as e:
-            logging.error("Error creating the driver: ", e)
+            logger.error("Error creating the driver: ", e)
         self.services = self.get_services()
 
     def close(self):
         """Close the connection to the kubernetes driver"""
         if self.driver is not None:
             self.driver.close()
-        logging.info("neo4j driver closed")
+        logger.info("neo4j driver closed")
         
     def query(self, query, parameters=None, db=None):
         """Query neo4j database"""
@@ -41,28 +43,37 @@ class DataGraph():
             result = session.run(query, parameters)
             response = [record.data() for record in result]  # Convert records to dictionaries
         except Exception as e:
-            logging.error("Query failed:", e)
+            logger.error("Query failed:", e)
         finally: 
             if session is not None:
                 session.close()
         return response
     
-    def drop_datagraph(self):
-        """Drop all nodes and relationships in the database after confirmation."""
-        confirmation = input("Are you sure you want to drop all data in the database? Type 'yes' to confirm: ")
-        if confirmation.lower() == 'yes':
+    def drop_datagraph(self, confirmation: Optional[bool] = None):
+        """Drop all nodes and relationships in the database after confirmation.
+
+        Args:
+            confirmation (Optional[bool]): If True, skip prompt and drop data. If False, skip drop. If None, prompt user.
+        """
+        if confirmation is None:
+            user_input = input("Are you sure you want to drop all data in the database? Type 'yes' to confirm: ")
+            confirmed = user_input.lower() == 'yes'
+        else:
+            confirmed = confirmation
+
+        if confirmed:
             try:
                 self.query("MATCH (n) DETACH DELETE n")
-                logging.info("All data has been dropped from the database.")
+                logger.info("All data has been dropped from the database.")
             except Exception as e:
-                logging.error("Failed to drop all data:", e)
+                logger.error("Failed to drop all data:", e)
         else:
-            logging.info("Operation canceled.")
+            logger.info("Operation canceled.")
 
     def create_datagraph(self, file_path: str):
         """Create the datagraph by executing queries from a file."""
         if not os.path.exists(file_path):
-            logging.error(f"File not found: {file_path}")
+            logger.error(f"File not found: {file_path}")
             return
         
         try:
@@ -74,9 +85,9 @@ class DataGraph():
                 query = query.strip()
                 if query:  # Skip empty queries
                     self.query(query)
-            logging.info("Datagraph created successfully.")
+            logger.info("Datagraph created successfully.")
         except Exception as e:
-            logging.error("Failed to create datagraph:", e)
+            logger.error("Failed to create datagraph:", e)
 
     def get_services(self) -> list:
         """Return all the kubernetes services in the cluster"""

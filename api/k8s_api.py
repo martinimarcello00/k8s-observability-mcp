@@ -1,8 +1,6 @@
-import logging
 from typing import Optional, Dict, List, Any
 from .base_k8s_client import BaseK8sClient
 from .config_manager import ConfigManager
-import json
 
 class K8sAPI(BaseK8sClient):
     def __init__(self, namespace: Optional[str] = None):

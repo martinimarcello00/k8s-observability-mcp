@@ -4,6 +4,8 @@ from typing import Optional, Dict, List, Any
 from .base_k8s_client import BaseK8sClient
 from .config_manager import ConfigManager
 
+logger = logging.getLogger(__name__)
+
 class JaegerAPI(BaseK8sClient):
     def __init__(self, jaeger_url: Optional[str] = None):
         config_manager = ConfigManager()
@@ -15,7 +17,7 @@ class JaegerAPI(BaseK8sClient):
     
     def get_jaeger_traces(self, service: str, limit: int = 20, lookback: str = "15m", min_latency_ms: Optional[float] = None, only_errors: bool = False):
         """Fetches traces from the Jaeger Query API, optionally filtering by minimum latency (ms) and error traces using Jaeger API parameters."""
-        logging.info(f"Querying Jaeger for '{service}' traces...")
+        logger.info(f"Querying Jaeger for '{service}' traces...")
         api_url = f"{self.jaeger_url}/api/traces"
 
         params = {
@@ -35,10 +37,10 @@ class JaegerAPI(BaseK8sClient):
             traces = response.json().get("data", [])
             return traces
         except requests.exceptions.RequestException as e:
-            logging.error(f"Error connecting to Jaeger: {e}")
+            logger.error(f"Error connecting to Jaeger: {e}")
             return None
         except KeyError:
-            logging.error("Unexpected response format from Jaeger. 'data' key not found.")
+            logger.error("Unexpected response format from Jaeger. 'data' key not found.")
             return None
 
     def process_trace(self, trace: Dict[str, Any]):
@@ -120,12 +122,12 @@ class JaegerAPI(BaseK8sClient):
         traces = self.get_jaeger_traces(service, limit, lookback, only_errors=only_errors)
 
         if traces is None:
-            logging.error(f"Failed to retrieve traces for service '{service}'. Check Jaeger connectivity and service name.")
+            logger.error(f"Failed to retrieve traces for service '{service}'. Check Jaeger connectivity and service name.")
             results["error"] = "Failed to fetch traces from Jaeger"
             return results
 
         if not traces:
-            logging.warning(f"No traces found for service '{service}' with lookback '{lookback}'.")
+            logger.warning(f"No traces found for service '{service}' with lookback '{lookback}'.")
             results["info"] = f"No traces found for service '{service}' with lookback '{lookback}'."
             return results
 
@@ -140,7 +142,7 @@ class JaegerAPI(BaseK8sClient):
         
     def get_trace(self, trace_id: str):
         """Fetches a single trace by trace ID from Jaeger."""
-        logging.info(f"Querying Jaeger for trace ID: {trace_id}")
+        logger.info(f"Querying Jaeger for trace ID: {trace_id}")
         api_url = f"{self.jaeger_url}/api/traces/{trace_id}"
         
         try:
@@ -151,13 +153,13 @@ class JaegerAPI(BaseK8sClient):
             if "data" in trace_data and len(trace_data["data"]) > 0:
                 return trace_data["data"][0]
             else:
-                logging.warning(f"No trace found with ID: {trace_id}")
+                logger.warning(f"No trace found with ID: {trace_id}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.error(f"Error connecting to Jaeger: {e}")
+            logger.error(f"Error connecting to Jaeger: {e}")
             return None
         except (KeyError, IndexError) as e:
-            logging.error(f"Unexpected response format from Jaeger: {e}")
+            logger.error(f"Unexpected response format from Jaeger: {e}")
             return None
     
     def get_slow_traces(
@@ -198,7 +200,7 @@ class JaegerAPI(BaseK8sClient):
         )
 
         if not traces:
-            logging.warning(f"No slow traces found for service '{service}' with min duration {min_duration_ms}ms")
+            logger.warning(f"No slow traces found for service '{service}' with min duration {min_duration_ms}ms")
             results["info"] = f"No traces found for service '{service}' with a minimum duration of {min_duration_ms}ms in the last {lookback}."
             return results
 
