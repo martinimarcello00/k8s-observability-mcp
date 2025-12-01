@@ -23,15 +23,25 @@ class ConfigManager:
     
     def __init__(self):
         if self._config is None:
-            load_dotenv()
-            self._config = Config(
-                target_namespace=os.environ.get("TARGET_NAMESPACE", "default"),
-                prometheus_url=os.environ.get("PROMETHEUS_SERVER_URL", "http://localhost:9090"),
-                jaeger_url=os.environ.get("JAEGER_URL", "http://localhost:16686"),
-                neo4j_uri=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
-                neo4j_user=os.environ.get("NEO4J_USER", "neo4j"),
-                neo4j_password=os.environ.get("NEO4J_PASSWORD", "neo4j")
-            )
+            # Load .env if it exists (for standalone use)
+            # Environment variables already set take precedence (override=False)
+            load_dotenv(override=False)
+            self._load_config()
+    
+    def _load_config(self):
+        """Load configuration from environment variables."""
+        self._config = Config(
+            target_namespace=os.environ.get("TARGET_NAMESPACE", "default"),
+            prometheus_url=os.environ.get("PROMETHEUS_SERVER_URL", "http://localhost:9090"),
+            jaeger_url=os.environ.get("JAEGER_URL", "http://localhost:16686"),
+            neo4j_uri=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+            neo4j_user=os.environ.get("NEO4J_USER", "neo4j"),
+            neo4j_password=os.environ.get("NEO4J_PASSWORD", "neo4j")
+        )
+    
+    def refresh_config(self):
+        """Refresh configuration from current environment variables."""
+        self._load_config()
     
     @property
     def config(self) -> Config:
