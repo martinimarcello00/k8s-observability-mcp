@@ -11,6 +11,7 @@ class Config:
     neo4j_uri: str
     neo4j_user: str
     neo4j_password: str
+    trace_service_starting_point: str
 
 class ConfigManager:
     _instance: Optional['ConfigManager'] = None
@@ -36,7 +37,8 @@ class ConfigManager:
             jaeger_url=os.environ.get("JAEGER_URL", "http://localhost:16686"),
             neo4j_uri=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
             neo4j_user=os.environ.get("NEO4J_USER", "neo4j"),
-            neo4j_password=os.environ.get("NEO4J_PASSWORD", "neo4j")
+            neo4j_password=os.environ.get("NEO4J_PASSWORD", "neo4j"),
+            trace_service_starting_point=os.environ.get("TRACE_SERVICE_STARTING_POINT", "frontend")
         )
     
     def refresh_config(self):
