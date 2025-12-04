@@ -80,12 +80,26 @@ class DataGraph():
             with open(file_path, 'r') as file:
                 queries = file.read()
             
+            # Remove comments (// ...) before splitting
+            lines = []
+            for line in queries.split('\n'):
+                # Remove everything after //
+                comment_idx = line.find('//')
+                if comment_idx != -1:
+                    line = line[:comment_idx]
+                lines.append(line)
+            queries = '\n'.join(lines)
+            
             # Split queries by semicolon and execute each query
+            query_count = 0
             for query in queries.split(';'):
                 query = query.strip()
                 if query:  # Skip empty queries
-                    self.query(query)
-            logger.info("Datagraph created successfully.")
+                    result = self.query(query)
+                    query_count += 1
+                    if result is None:
+                        logger.warning(f"Query {query_count} returned None or failed: {query[:50]}...")
+            logger.info(f"Datagraph created successfully. Executed {query_count} queries.")
         except Exception as e:
             logger.error("Failed to create datagraph:", e)
 

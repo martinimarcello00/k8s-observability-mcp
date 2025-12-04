@@ -1,0 +1,130 @@
+// --------------------------------------------------------
+// 1. Create Services (Nodes based on kubectl output)
+// --------------------------------------------------------
+MERGE (nw:Service {name: 'nginx-thrift'})
+MERGE (cp:Service {name: 'compose-post-service'})
+MERGE (u:Service {name: 'user-service'})
+MERGE (ht:Service {name: 'home-timeline-service'})
+MERGE (ut:Service {name: 'user-timeline-service'})
+MERGE (t:Service {name: 'text-service'})
+MERGE (m:Service {name: 'media-service'})
+MERGE (ui:Service {name: 'unique-id-service'})
+MERGE (ps:Service {name: 'post-storage-service'})
+MERGE (sg:Service {name: 'social-graph-service'})
+MERGE (um:Service {name: 'user-mention-service'})
+MERGE (us:Service {name: 'url-shorten-service'})
+MERGE (mf:Service {name: 'media-frontend'});
+
+// --------------------------------------------------------
+// 2. Create Infrastructure (Databases & Caches from kubectl)
+// --------------------------------------------------------
+
+// MongoDB Instances
+// FIXED: Typo 'ame' -> 'name' corrected here
+MERGE (db_media:Database {name: 'media-mongodb'})
+MERGE (db_post:Database {name: 'post-storage-mongodb'})
+MERGE (db_social:Database {name: 'social-graph-mongodb'})
+MERGE (db_url:Database {name: 'url-shorten-mongodb'})
+MERGE (db_user:Database {name: 'user-mongodb'})
+MERGE (db_ut:Database {name: 'user-timeline-mongodb'})
+
+// Cache Instances (Memcached & Redis)
+MERGE (c_ht:Cache {name: 'home-timeline-redis'})
+MERGE (c_media:Cache {name: 'media-memcached'})
+MERGE (c_post:Cache {name: 'post-storage-memcached'})
+MERGE (c_social:Cache {name: 'social-graph-redis'})
+MERGE (c_url:Cache {name: 'url-shorten-memcached'})
+MERGE (c_user:Cache {name: 'user-memcached'})
+MERGE (c_ut:Cache {name: 'user-timeline-redis'});
+
+
+// --------------------------------------------------------
+// 3. Create [:CALLS] Relationships (Service -> Service)
+// --------------------------------------------------------
+
+// Entry Point
+MATCH (src:Service {name: 'nginx-thrift'}), (dst:Service {name: 'compose-post-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+// Media Frontend (Additional Entry Point for uploads)
+MATCH (src:Service {name: 'media-frontend'}), (dst:Service {name: 'media-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+// Compose Post Service fan-out
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'user-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'home-timeline-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'user-timeline-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'text-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'media-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'unique-id-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'compose-post-service'}), (dst:Service {name: 'post-storage-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+// Text Service downstream calls
+MATCH (src:Service {name: 'text-service'}), (dst:Service {name: 'user-mention-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'text-service'}), (dst:Service {name: 'url-shorten-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+// Timeline downstream calls
+MATCH (src:Service {name: 'home-timeline-service'}), (dst:Service {name: 'social-graph-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+
+// --------------------------------------------------------
+// 4. Create [:USES] Relationships (Service -> Infra)
+// Inferred from naming conventions in kubectl output
+// --------------------------------------------------------
+
+// Home Timeline
+MATCH (s:Service {name: 'home-timeline-service'}), (c:Cache {name: 'home-timeline-redis'})
+MERGE (s)-[:USES]->(c);
+
+// Media Service
+MATCH (s:Service {name: 'media-service'}), (db:Database {name: 'media-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'media-service'}), (c:Cache {name: 'media-memcached'})
+MERGE (s)-[:USES]->(c);
+
+// Post Storage
+MATCH (s:Service {name: 'post-storage-service'}), (db:Database {name: 'post-storage-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'post-storage-service'}), (c:Cache {name: 'post-storage-memcached'})
+MERGE (s)-[:USES]->(c);
+
+// Social Graph
+MATCH (s:Service {name: 'social-graph-service'}), (db:Database {name: 'social-graph-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'social-graph-service'}), (c:Cache {name: 'social-graph-redis'})
+MERGE (s)-[:USES]->(c);
+
+// URL Shorten
+MATCH (s:Service {name: 'url-shorten-service'}), (db:Database {name: 'url-shorten-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'url-shorten-service'}), (c:Cache {name: 'url-shorten-memcached'})
+MERGE (s)-[:USES]->(c);
+
+// User Service
+MATCH (s:Service {name: 'user-service'}), (db:Database {name: 'user-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'user-service'}), (c:Cache {name: 'user-memcached'})
+MERGE (s)-[:USES]->(c);
+
+// User Timeline
+MATCH (s:Service {name: 'user-timeline-service'}), (db:Database {name: 'user-timeline-mongodb'})
+MERGE (s)-[:USES]->(db);
+MATCH (s:Service {name: 'user-timeline-service'}), (c:Cache {name: 'user-timeline-redis'})
+MERGE (s)-[:USES]->(c);
