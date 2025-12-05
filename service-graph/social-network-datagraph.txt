@@ -40,13 +40,21 @@ MERGE (c_ut:Cache {name: 'user-timeline-redis'});
 
 // --------------------------------------------------------
 // 3. Create [:CALLS] Relationships (Service -> Service)
+// Updated based on dynamic trace analysis (image_beafe1.png)
 // --------------------------------------------------------
 
-// Entry Point
-MATCH (src:Service {name: 'nginx-thrift'}), (dst:Service {name: 'compose-post-service'})
-MERGE (src)-[:CALLS]->(dst);
+// Entry Points (Nginx now calls multiple services directly)
+MATCH (nginx:Service {name: 'nginx-thrift'}), (cps:Service {name: 'compose-post-service'})
+MERGE (nginx)-[:CALLS]->(cps);
 
-// Media Frontend (Additional Entry Point for uploads)
+MATCH (nginx:Service {name: 'nginx-thrift'}), (hts:Service {name: 'home-timeline-service'})
+MERGE (nginx)-[:CALLS]->(hts);
+
+MATCH (nginx:Service {name: 'nginx-thrift'}), (uts:Service {name: 'user-timeline-service'})
+MERGE (nginx)-[:CALLS]->(uts);
+
+
+// Media Frontend (Entry Point for uploads)
 MATCH (src:Service {name: 'media-frontend'}), (dst:Service {name: 'media-service'})
 MERGE (src)-[:CALLS]->(dst);
 
@@ -79,8 +87,16 @@ MERGE (src)-[:CALLS]->(dst);
 MATCH (src:Service {name: 'text-service'}), (dst:Service {name: 'url-shorten-service'})
 MERGE (src)-[:CALLS]->(dst);
 
-// Timeline downstream calls
+// Timeline Services downstream calls
+// Home Timeline now retrieves posts content and checks social graph
 MATCH (src:Service {name: 'home-timeline-service'}), (dst:Service {name: 'social-graph-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+MATCH (src:Service {name: 'home-timeline-service'}), (dst:Service {name: 'post-storage-service'})
+MERGE (src)-[:CALLS]->(dst);
+
+// User Timeline retrieves posts content
+MATCH (src:Service {name: 'user-timeline-service'}), (dst:Service {name: 'post-storage-service'})
 MERGE (src)-[:CALLS]->(dst);
 
 
