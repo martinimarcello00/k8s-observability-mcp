@@ -6,6 +6,20 @@ from .config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
+# Astronomy Shop: services and browser sessions keep a gRPC stream open to flagd (EventStream) to receive flag
+# changes. Its spans last as long as the connection (seconds for browsers, up to a 600s deadline for services)
+# and end in error at every deadline or flagd restart, by design: noise for slow/error trace triage.
+STREAM_MARKER = "EventStream"
+
+def is_stream_trace(trace: Dict[str, Any]) -> bool:
+    """True if a span is an EventStream call: in the operation name (gRPC) or in a tag such as http.url (Envoy).
+    The subscription runs in its own trace, so the whole trace can be dropped."""
+    return any(
+        STREAM_MARKER in span["operationName"]
+        or any(STREAM_MARKER in str(tag.get("value")) for tag in span.get("tags", []))
+        for span in trace["spans"]
+    )
+
 class JaegerAPI(BaseK8sClient):
     def __init__(self, jaeger_url: Optional[str] = None):
         config_manager = ConfigManager()
@@ -31,11 +45,25 @@ class JaegerAPI(BaseK8sClient):
         if only_errors:
             params["tags"] = '{"error":"true"}'
 
-        try:
-            response = requests.get(api_url, params=params)
+        def search(extra: Dict[str, str] = {}) -> List[Dict[str, Any]]:
+            response = requests.get(api_url, params={**params, **extra})
             response.raise_for_status()
-            traces = response.json().get("data", [])
-            return traces
+            return response.json().get("data") or []
+
+        try:
+            traces = search()
+            kept = [trace for trace in traces if not is_stream_trace(trace)]
+            if len(traces) == limit and len(kept) < limit:
+                # Stream traces can fill the whole page (frontend-proxy: ~15/min from browser sessions) and push
+                # real ones out: search again per operation, as real requests have their own
+                # (e.g. Envoy's "router frontend egress"), then keep the most recent ones
+                response = requests.get(f"{self.jaeger_url}/api/services/{service}/operations")
+                response.raise_for_status()
+                for operation in response.json().get("data") or []:
+                    kept += [trace for trace in search({"operation": operation}) if not is_stream_trace(trace)]
+                kept = sorted({trace["traceID"]: trace for trace in kept}.values(),
+                              key=lambda trace: min(span["startTime"] for span in trace["spans"]), reverse=True)
+            return kept[:limit]
         except requests.exceptions.RequestException as e:
             logger.error(f"Error connecting to Jaeger: {e}")
             return None
@@ -53,10 +81,13 @@ class JaegerAPI(BaseK8sClient):
                 root_span = span
                 break
                 
-        if not root_span:
-            return None
-
-        latency_ms = root_span["duration"] / 1000.0
+        if root_span:
+            latency_ms = root_span["duration"] / 1000.0
+        else:
+            # OTel (e.g. Astronomy Shop): the root span lives in a client that doesn't export to Jaeger
+            start = min(s["startTime"] for s in trace["spans"])
+            end = max(s["startTime"] + s["duration"] for s in trace["spans"])
+            latency_ms = (end - start) / 1000.0
 
         # Check for Errors and Extract Messages
         has_error = False
@@ -73,17 +104,27 @@ class JaegerAPI(BaseK8sClient):
             
             # If this span has the error, search its logs for the reason
             if is_error_span:
+                # OTel puts the error reason in the span status
+                for tag in span.get("tags", []):
+                    if tag.get("key") == "otel.status_description":
+                        error_details.append(tag["value"])
                 for log in span.get("logs", []):
-                    # Find fields like 'event: error', 'message', or 'stack'
+                    # OpenTracing: event=error with message/stack; OTel: event=exception with exception.*
                     log_fields = {field['key']: field['value'] for field in log.get("fields", [])}
-                    if log_fields.get("event") == "error":
-                        if "message" in log_fields:
-                            error_details.append(log_fields["message"])
-                        if "stack" in log_fields: # Stack traces can be verbose but useful
-                            error_details.append(log_fields["stack"].split('\n')[0]) # Get first line of stack
+                    if log_fields.get("event") in ("error", "exception"):
+                        message = log_fields.get("message") or log_fields.get("exception.message")
+                        if message:
+                            error_details.append(message)
+                        # OTel stacktrace's first line just repeats exception.message, so only use it as a fallback
+                        stack = log_fields.get("stack") or (None if message else log_fields.get("exception.stacktrace"))
+                        if stack: # Stack traces can be verbose but useful
+                            error_details.append(stack.split('\n')[0]) # Get first line of stack
         
         if error_details:
-            error_message = "; ".join(error_details) # Join multiple messages
+            # OTel repeats (and wraps) the same message on every span up the call chain:
+            # drop duplicates and messages already contained in a longer one
+            unique = list(dict.fromkeys(error_details))
+            error_message = "; ".join(d for d in unique if not any(d != o and d in o for o in unique))
 
         # Determine the Sequence of Services
         service_map = {p_id: p_info["serviceName"] for p_id, p_info in trace["processes"].items()}
