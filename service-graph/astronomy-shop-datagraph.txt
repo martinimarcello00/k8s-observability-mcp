@@ -1,6 +1,12 @@
+// Astronomy Shop = OpenTelemetry Demo 3.1.0 (Helm chart open-telemetry/opentelemetry-demo 0.42.1)
+// Source of each relationship:
+//   [trace]  observed in Jaeger traces
+//   [config] endpoint set in the chart's deployment env (*_ADDR, *_HOST, *_ENDPOINT, DB_CONNECTION_STRING)
+// Not modeled: load-generator and observability/admin components
+// (otel-collector, jaeger, grafana, prometheus, opensearch, opamp-server, telemetry-docs).
+
 // 1. Create Application Services
-// Based on the nodes visible in the Jaeger trace view
-MERGE (s:Service {name: 'frontend-web'});
+MERGE (s:Service {name: 'frontend-web'});   // browser app run by the load-generator, not a Kubernetes service
 MERGE (s:Service {name: 'frontend-proxy'});
 MERGE (s:Service {name: 'frontend'});
 MERGE (s:Service {name: 'image-provider'});
@@ -15,61 +21,115 @@ MERGE (s:Service {name: 'currency'});
 MERGE (s:Service {name: 'ad'});
 MERGE (s:Service {name: 'checkout'});
 MERGE (s:Service {name: 'quote'});
+MERGE (s:Service {name: 'accounting'});
+MERGE (s:Service {name: 'flagd'});           // feature flag service (flagd + flagd-ui containers)
+MERGE (s:Service {name: 'chatbot'});         // AI shopping assistant UI
+MERGE (s:Service {name: 'agent'});           // AI shopping assistant backend (LLM responses replayed, USE_VCR)
+MERGE (s:Service {name: 'mcp'});             // MCP tool server for the agent
 
-// 2. Create Relationships
+// 2. Create infrastructure dependencies
+MERGE (db:Database {name: 'astronomy-db'});      // PostgreSQL
+MERGE (c:Cache {name: 'valkey-cart'});           // Valkey (Redis-compatible) cart store
+MERGE (q:MessageQueue {name: 'kafka'});          // 'orders' topic
+
+// 3. Create Relationships
 // Top level entry points
 MATCH (web:Service {name: 'frontend-web'}), (proxy:Service {name: 'frontend-proxy'})
-MERGE (web)-[:CALLS]->(proxy);
+MERGE (web)-[:CALLS]->(proxy);   // [trace]
 
 // Frontend Proxy breakdown
 MATCH (proxy:Service {name: 'frontend-proxy'}), (frontend:Service {name: 'frontend'})
-MERGE (proxy)-[:CALLS]->(frontend);
+MERGE (proxy)-[:CALLS]->(frontend);   // [trace+config]
 
 MATCH (proxy:Service {name: 'frontend-proxy'}), (img:Service {name: 'image-provider'})
-MERGE (proxy)-[:CALLS]->(img);
+MERGE (proxy)-[:CALLS]->(img);   // [trace+config]
+
+MATCH (proxy:Service {name: 'frontend-proxy'}), (chat:Service {name: 'chatbot'})
+MERGE (proxy)-[:CALLS]->(chat);   // [config] CHATBOT_HOST
 
 // Frontend Service calls
 MATCH (frontend:Service {name: 'frontend'}), (rec:Service {name: 'recommendation'})
-MERGE (frontend)-[:CALLS]->(rec);
+MERGE (frontend)-[:CALLS]->(rec);   // [trace+config]
 
 MATCH (frontend:Service {name: 'frontend'}), (cart:Service {name: 'cart'})
-MERGE (frontend)-[:CALLS]->(cart);
+MERGE (frontend)-[:CALLS]->(cart);   // [trace+config]
 
 MATCH (frontend:Service {name: 'frontend'}), (checkout:Service {name: 'checkout'})
-MERGE (frontend)-[:CALLS]->(checkout);
+MERGE (frontend)-[:CALLS]->(checkout);   // [trace+config]
 
 MATCH (frontend:Service {name: 'frontend'}), (ad:Service {name: 'ad'})
-MERGE (frontend)-[:CALLS]->(ad);
+MERGE (frontend)-[:CALLS]->(ad);   // [trace+config]
 
 MATCH (frontend:Service {name: 'frontend'}), (curr:Service {name: 'currency'})
-MERGE (frontend)-[:CALLS]->(curr);
+MERGE (frontend)-[:CALLS]->(curr);   // [trace+config]
+
+MATCH (frontend:Service {name: 'frontend'}), (prod:Service {name: 'product-catalog'})
+MERGE (frontend)-[:CALLS]->(prod);   // [trace+config]
+
+MATCH (frontend:Service {name: 'frontend'}), (ship:Service {name: 'shipping'})
+MERGE (frontend)-[:CALLS]->(ship);   // [trace+config]
 
 // Recommendation Service calls
 MATCH (rec:Service {name: 'recommendation'}), (prod:Service {name: 'product-catalog'})
-MERGE (rec)-[:CALLS]->(prod);
+MERGE (rec)-[:CALLS]->(prod);   // [trace+config]
 
-// Checkout Service calls
+// Checkout Service calls (fraud-detection and accounting are reached through kafka, not called)
 MATCH (checkout:Service {name: 'checkout'}), (prod:Service {name: 'product-catalog'})
-MERGE (checkout)-[:CALLS]->(prod);
+MERGE (checkout)-[:CALLS]->(prod);   // [trace+config]
 
 MATCH (checkout:Service {name: 'checkout'}), (cart:Service {name: 'cart'})
-MERGE (checkout)-[:CALLS]->(cart);
+MERGE (checkout)-[:CALLS]->(cart);   // [trace+config]
 
 MATCH (checkout:Service {name: 'checkout'}), (email:Service {name: 'email'})
-MERGE (checkout)-[:CALLS]->(email);
+MERGE (checkout)-[:CALLS]->(email);   // [trace+config]
 
 MATCH (checkout:Service {name: 'checkout'}), (pay:Service {name: 'payment'})
-MERGE (checkout)-[:CALLS]->(pay);
-
-MATCH (checkout:Service {name: 'checkout'}), (fraud:Service {name: 'fraud-detection'})
-MERGE (checkout)-[:CALLS]->(fraud);
+MERGE (checkout)-[:CALLS]->(pay);   // [trace+config]
 
 MATCH (checkout:Service {name: 'checkout'}), (ship:Service {name: 'shipping'})
-MERGE (checkout)-[:CALLS]->(ship);
+MERGE (checkout)-[:CALLS]->(ship);   // [trace+config]
 
 MATCH (checkout:Service {name: 'checkout'}), (curr:Service {name: 'currency'})
-MERGE (checkout)-[:CALLS]->(curr);
+MERGE (checkout)-[:CALLS]->(curr);   // [trace+config]
 
 // Shipping Service calls
 MATCH (ship:Service {name: 'shipping'}), (quote:Service {name: 'quote'})
-MERGE (ship)-[:CALLS]->(quote);
+MERGE (ship)-[:CALLS]->(quote);   // [trace+config]
+
+// AI shopping assistant (agent -> mcp not modeled: the chart sets MCP_ENABLED=False)
+MATCH (chat:Service {name: 'chatbot'}), (agent:Service {name: 'agent'})
+MERGE (chat)-[:CALLS]->(agent);   // [config] AGENT_ENDPOINT
+
+MATCH (agent:Service {name: 'agent'}), (frontend:Service {name: 'frontend'})
+MERGE (agent)-[:CALLS]->(frontend);   // [config] APPLICATION_ENDPOINT
+
+MATCH (mcp:Service {name: 'mcp'}), (frontend:Service {name: 'frontend'})
+MERGE (mcp)-[:CALLS]->(frontend);   // [config] APPLICATION_ENDPOINT
+
+// Feature flags: every service with FLAGD_HOST evaluates flags on flagd
+MATCH (s:Service), (flagd:Service {name: 'flagd'})
+WHERE s.name IN ['ad', 'cart', 'fraud-detection', 'frontend-proxy', 'payment', 'recommendation']
+MERGE (s)-[:CALLS]->(flagd);   // [trace+config]
+
+MATCH (s:Service), (flagd:Service {name: 'flagd'})
+WHERE s.name IN ['agent', 'checkout', 'email', 'frontend', 'product-catalog', 'shipping']
+MERGE (s)-[:CALLS]->(flagd);   // [config] flags served from the provider's local cache, no per-call spans
+
+// 4. Create infrastructure relationships
+MATCH (s:Service {name: 'cart'}), (c:Cache {name: 'valkey-cart'})
+MERGE (s)-[:USES]->(c);   // [trace+config] VALKEY_ADDR
+
+MATCH (s:Service {name: 'product-catalog'}), (db:Database {name: 'astronomy-db'})
+MERGE (s)-[:USES]->(db);   // [trace+config] DB_CONNECTION_STRING
+
+MATCH (s:Service {name: 'accounting'}), (db:Database {name: 'astronomy-db'})
+MERGE (s)-[:USES]->(db);   // [trace+config] DB_CONNECTION_STRING
+
+MATCH (s:Service {name: 'checkout'}), (q:MessageQueue {name: 'kafka'})
+MERGE (s)-[:USES]->(q);   // [trace+config] KAFKA_ADDR, publishes orders
+
+MATCH (s:Service {name: 'accounting'}), (q:MessageQueue {name: 'kafka'})
+MERGE (s)-[:USES]->(q);   // [trace+config] KAFKA_ADDR, consumes orders
+
+MATCH (s:Service {name: 'fraud-detection'}), (q:MessageQueue {name: 'kafka'})
+MERGE (s)-[:USES]->(q);   // [trace+config] KAFKA_ADDR, consumes orders

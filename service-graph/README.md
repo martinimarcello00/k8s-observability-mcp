@@ -11,10 +11,10 @@ This folder contains a simple service dependency graph used by the MCP tools.
 A small Neo4j graph that models:
 
 - Services: (:Service {name})
-- Datastores/Caches: (:Database), (:Cache)
+- Datastores/Caches/Queues: (:Database), (:Cache), (:MessageQueue)
 - Relationships:
   - (:Service)-[:CALLS]->(:Service)
-  - (:Service)-[:USES]->(:Database|:Cache)
+  - (:Service)-[:USES]->(:Database|:Cache|:MessageQueue)
 
 ## How it’s built
 
