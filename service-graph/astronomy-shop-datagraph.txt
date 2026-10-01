@@ -2,8 +2,8 @@
 // Source of each relationship:
 //   [trace]  observed in Jaeger traces
 //   [config] endpoint set in the chart's deployment env (*_ADDR, *_HOST, *_ENDPOINT, DB_CONNECTION_STRING)
-// Not modeled: load-generator and observability/admin components
-// (otel-collector, jaeger, grafana, prometheus, opensearch, opamp-server, telemetry-docs).
+// Not modeled: load-generator, flagd/flagd-ui (fault-injection mechanism, hidden from the agent)
+// and observability/admin components (otel-collector, jaeger, grafana, prometheus, opensearch, opamp-server, telemetry-docs).
 
 // 1. Create Application Services
 MERGE (s:Service {name: 'frontend-web'});   // browser app run by the load-generator, not a Kubernetes service
@@ -22,7 +22,6 @@ MERGE (s:Service {name: 'ad'});
 MERGE (s:Service {name: 'checkout'});
 MERGE (s:Service {name: 'quote'});
 MERGE (s:Service {name: 'accounting'});
-MERGE (s:Service {name: 'flagd'});           // feature flag service (flagd + flagd-ui containers)
 MERGE (s:Service {name: 'chatbot'});         // AI shopping assistant UI
 MERGE (s:Service {name: 'agent'});           // AI shopping assistant backend (LLM responses replayed, USE_VCR)
 MERGE (s:Service {name: 'mcp'});             // MCP tool server for the agent
@@ -105,15 +104,6 @@ MERGE (agent)-[:CALLS]->(frontend);   // [config] APPLICATION_ENDPOINT
 
 MATCH (mcp:Service {name: 'mcp'}), (frontend:Service {name: 'frontend'})
 MERGE (mcp)-[:CALLS]->(frontend);   // [config] APPLICATION_ENDPOINT
-
-// Feature flags: every service with FLAGD_HOST evaluates flags on flagd
-MATCH (s:Service), (flagd:Service {name: 'flagd'})
-WHERE s.name IN ['ad', 'cart', 'fraud-detection', 'frontend-proxy', 'payment', 'recommendation']
-MERGE (s)-[:CALLS]->(flagd);   // [trace+config]
-
-MATCH (s:Service), (flagd:Service {name: 'flagd'})
-WHERE s.name IN ['agent', 'checkout', 'email', 'frontend', 'product-catalog', 'shipping']
-MERGE (s)-[:CALLS]->(flagd);   // [config] flags served from the provider's local cache, no per-call spans
 
 // 4. Create infrastructure relationships
 MATCH (s:Service {name: 'cart'}), (c:Cache {name: 'valkey-cart'})
