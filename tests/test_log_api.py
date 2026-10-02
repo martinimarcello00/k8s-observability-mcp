@@ -25,4 +25,13 @@ assert out == ('Found 3 important log entries:\n\n'
 # Single-container pod: logs unchanged. Multi-container pod: every container read, lines prefixed
 assert logs_of({"app": "a\nb"}, important=False) == "a\nb"
 assert logs_of({"flagd": "ERROR x", "flagd-ui": "started"}, important=False) == "[flagd] ERROR x\n[flagd-ui] started"
+
+# Pod and service lists (real names, AIOpsLab run 2026-08-01): no flagd, so every tool answers "does not exist"
+names = lambda *n: NS(items=[NS(metadata=NS(name=x)) for x in n])
+api = LogAPI.__new__(LogAPI)
+api.namespace, api._pods_cache, api._services_cache = "astronomy-shop", None, None
+api._k8s_client = NS(list_namespaced_pod=lambda ns: names("email-6d9bc6d666-bqqct", "flagd-6797468f77-xgwrd", "fraud-detection-5d94d88bb7-9np78"),
+                     list_namespaced_service=lambda ns: names("email", "flagd", "fraud-detection"))
+assert api.get_pods_list() == ["email-6d9bc6d666-bqqct", "fraud-detection-5d94d88bb7-9np78"]
+assert api.get_services_list() == ["email", "fraud-detection"]
 print("ok")

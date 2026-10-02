@@ -1,10 +1,16 @@
 from kubernetes import client, config
 from abc import ABC
 import os
+import re
 import logging
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# Astronomy Shop injects its faults through flagd feature flags: the agent has to localize the faulty service, not read which flag is on
+
+# regex which finds every mention to feature flag and derivative
+MECHANISM = re.compile(r"flagd|flagservice|feature[ _]?flag", re.IGNORECASE)
 
 class BaseK8sClient(ABC):
     """Base class for Kubernetes API interactions"""
@@ -36,7 +42,8 @@ class BaseK8sClient(ABC):
                 else:
                     service_list = self.k8s_client.list_service_for_all_namespaces()
                 
-                self._services_cache = [service.metadata.name for service in service_list.items]
+                self._services_cache = [service.metadata.name for service in service_list.items
+                                        if not MECHANISM.search(service.metadata.name)]
             except Exception as e:
                 logger.error(f"Failed to get services list: {e}")
                 return []
@@ -48,7 +55,7 @@ class BaseK8sClient(ABC):
         if not use_cache or self._pods_cache is None:
             try:
                 pod_list = self.k8s_client.list_namespaced_pod(self.namespace)
-                self._pods_cache = [pod.metadata.name for pod in pod_list.items]
+                self._pods_cache = [pod.metadata.name for pod in pod_list.items if not MECHANISM.search(pod.metadata.name)]
             except Exception as e:
                 logger.error(f"Failed to get pods list: {e}")
                 return []
