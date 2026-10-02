@@ -11,6 +11,13 @@ logger = logging.getLogger(__name__)
 
 # regex which finds every mention to feature flag and derivative
 MECHANISM = re.compile(r"flagd|flagservice|feature[ _]?flag", re.IGNORECASE)
+# Demo 3.1.0 messages announcing an active flag, e.g. "Warning: FeatureFlag 'kafkaQueueProblems' is activated, overloading queue now."
+FLAG_ANNOUNCEMENT = re.compile(r"feature ?flag\s*'?\w*'?\s*(?:is\s+)?(?:enabled|activated)\b(?:,\s*)?", re.IGNORECASE)
+
+def hide_flag_announcement(text: str) -> str:
+    """Drop the flag announcement and keep the symptom: "Warning: overloading queue now." """
+    hidden, count = FLAG_ANNOUNCEMENT.subn("", text)
+    return hidden.rstrip() if count else text
 
 class BaseK8sClient(ABC):
     """Base class for Kubernetes API interactions"""

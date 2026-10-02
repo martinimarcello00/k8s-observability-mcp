@@ -1,6 +1,6 @@
 import re
 from typing import Optional
-from .base_k8s_client import BaseK8sClient
+from .base_k8s_client import BaseK8sClient, MECHANISM, hide_flag_announcement
 
 class LogAPI(BaseK8sClient):
     def __init__(self, namespace: Optional[str] = None):
@@ -28,6 +28,8 @@ class LogAPI(BaseK8sClient):
                 # Tell containers apart only when there is more than one
                 prefix = f"[{container}] " if len(containers) > 1 else ""
                 lines += [prefix + line for line in container_logs.split('\n')]
+            # Injection mechanism hidden: flag announcements keep only their symptom, lines about flagd go
+            lines = [line for line in map(hide_flag_announcement, lines) if not MECHANISM.search(line)]
             logs = "\n".join(lines)
         except Exception as e:
             return f"Failed to get logs for pod {pod_name}: {str(e)}"
