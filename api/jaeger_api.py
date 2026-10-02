@@ -1,24 +1,40 @@
+import json
 import requests
 import logging
 from typing import Optional, Dict, List, Any
-from .base_k8s_client import BaseK8sClient
+from .base_k8s_client import BaseK8sClient, MECHANISM, hide_flag_announcement
 from .config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
-# Astronomy Shop: services and browser sessions keep a gRPC stream open to flagd (EventStream) to receive flag
-# changes. Its spans last as long as the connection (seconds for browsers, up to a 600s deadline for services)
-# and end in error at every deadline or flagd restart, by design: noise for slow/error trace triage.
-STREAM_MARKER = "EventStream"
+def strip_flagd(trace: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Hide the fault-injection mechanism (see MECHANISM) from a trace, None when nothing is left.
+    Flag evaluation spans (flagd's own, the callers' Resolve*, OFREP and Envoy /flagservice/ calls) are leaves and go;
+    flag attributes and evaluation events go; error messages announcing a flag keep only their symptom.
+    Astronomy Shop services and browsers also keep a stream open to flagd (EventStream) in a trace of its own: it lasts
+    as long as the connection and fails at every deadline or flagd restart, noise for slow/error trace triage."""
+    if not MECHANISM.search(json.dumps(trace)):
+        return trace
 
-def is_stream_trace(trace: Dict[str, Any]) -> bool:
-    """True if a span is an EventStream call: in the operation name (gRPC) or in a tag such as http.url (Envoy).
-    The subscription runs in its own trace, so the whole trace can be dropped."""
-    return any(
-        STREAM_MARKER in span["operationName"]
-        or any(STREAM_MARKER in str(tag.get("value")) for tag in span.get("tags", []))
-        for span in trace["spans"]
-    )
+    def clean(value):
+        return hide_flag_announcement(value) if isinstance(value, str) else value
+
+    hidden = {pid for pid, process in trace["processes"].items() if MECHANISM.search(process["serviceName"])}
+    spans = []
+    for span in trace["spans"]:
+        tags = [{**tag, "value": clean(tag.get("value"))} for tag in span.get("tags", [])]
+        if (span["processID"] in hidden or MECHANISM.search(span["operationName"])
+                or any(MECHANISM.search(str(tag["value"])) for tag in tags)):
+            continue
+        logs = [{**log, "fields": [{**field, "value": clean(field.get("value"))} for field in log.get("fields", [])]}
+                for log in span.get("logs", [])]
+        spans.append({**span,
+                      "tags": [tag for tag in tags if not MECHANISM.search(tag["key"])],
+                      "logs": [log for log in logs
+                               if not any(MECHANISM.search(f"{field['key']}={field['value']}") for field in log["fields"])]})
+    if not spans:
+        return None
+    return {**trace, "spans": spans, "processes": {pid: p for pid, p in trace["processes"].items() if pid not in hidden}}
 
 class JaegerAPI(BaseK8sClient):
     def __init__(self, jaeger_url: Optional[str] = None):
@@ -52,15 +68,15 @@ class JaegerAPI(BaseK8sClient):
 
         try:
             traces = search()
-            kept = [trace for trace in traces if not is_stream_trace(trace)]
+            kept = [trace for trace in map(strip_flagd, traces) if trace]
             if len(traces) == limit and len(kept) < limit:
-                # Stream traces can fill the whole page (frontend-proxy: ~15/min from browser sessions) and push
+                # EventStream traces can fill the whole page (frontend-proxy: ~15/min from browser sessions) and push
                 # real ones out: search again per operation, as real requests have their own
                 # (e.g. Envoy's "router frontend egress"), then keep the most recent ones
                 response = requests.get(f"{self.jaeger_url}/api/services/{service}/operations")
                 response.raise_for_status()
                 for operation in response.json().get("data") or []:
-                    kept += [trace for trace in search({"operation": operation}) if not is_stream_trace(trace)]
+                    kept += [trace for trace in map(strip_flagd, search({"operation": operation})) if trace]
                 kept = sorted({trace["traceID"]: trace for trace in kept}.values(),
                               key=lambda trace: min(span["startTime"] for span in trace["spans"]), reverse=True)
             return kept[:limit]
@@ -192,7 +208,7 @@ class JaegerAPI(BaseK8sClient):
             trace_data = response.json()
             
             if "data" in trace_data and len(trace_data["data"]) > 0:
-                return trace_data["data"][0]
+                return strip_flagd(trace_data["data"][0])
             else:
                 logger.warning(f"No trace found with ID: {trace_id}")
                 return None

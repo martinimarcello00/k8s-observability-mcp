@@ -1,7 +1,10 @@
 # Run from the repo root: PYTHONPATH=. python tests/test_jaeger_api.py  (no cluster/Jaeger needed)
+import json
+import os
 from types import SimpleNamespace as NS
 import api.jaeger_api as jaeger_api
-from api.jaeger_api import JaegerAPI, is_stream_trace
+from api.base_k8s_client import MECHANISM
+from api.jaeger_api import JaegerAPI, strip_flagd
 
 j = JaegerAPI.__new__(JaegerAPI)  # skip k8s/Jaeger init, process_trace is pure
 
@@ -28,10 +31,45 @@ otel = {"traceID": "t2", "processes": {"p1": {"serviceName": "checkout"}, "p2": 
                                   {"key": "exception.stacktrace", "value": "Error: Invalid token.\n  at charge"}]}]}]}
 assert j.process_trace(otel) == {"traceID": "t2", "latency_ms": 5.0, "has_error": True,
                                  "sequence": "checkout -> payment", "error_message": "could not charge: Invalid token."}
-# flagd EventStream subscription (Envoy span carries it in http.url, its egress span has no marker): dropped
-stream = {"spans": [{"operationName": "POST", "startTime": 1, "tags": [{"key": "http.url", "value": "http://frontend-proxy:8080/flagservice/flagd.evaluation.v1.Service/EventStream"}]},
-                    {"operationName": "router flagservice egress", "startTime": 1, "tags": []}]}
-assert is_stream_trace(stream) and not is_stream_trace(ot) and not is_stream_trace(otel)
+
+# No flag in it (Hotel Reservation, Social Network): the very same trace back
+assert strip_flagd(ot) is ot and strip_flagd(otel) is otel
+
+# flagd EventStream subscription (Envoy span carries it in http.url, its egress span in the operation name): dropped
+stream = {"traceID": "s", "processes": {"p1": {"serviceName": "frontend-proxy"}},
+          "spans": [{"processID": "p1", "operationName": "POST", "startTime": 1, "tags": [{"key": "http.url", "value": "http://frontend-proxy:8080/flagservice/flagd.evaluation.v1.Service/EventStream"}]},
+                    {"processID": "p1", "operationName": "router flagservice egress", "startTime": 1, "tags": []}]}
+assert strip_flagd(stream) is None
+
+# Astronomy Shop, real traces from Jaeger (demo 3.1.0 on the kind cluster, 2026-10-01, flags injected as AIOpsLab does).
+# Nothing about flagd or feature flags may be left; the real signal (sequence, latency, errors) stays.
+with open(os.path.join(os.path.dirname(__file__), "astronomy_shop_traces.json")) as f:
+    real = json.load(f)
+for name, trace in real.items():
+    after = strip_flagd(trace)
+    assert after is None or not MECHANISM.search(json.dumps(after)), name
+    if after:
+        before, now = j.process_trace(trace), j.process_trace(after)
+        hops = iter(before["sequence"].split(" -> "))
+        assert all(hop in hops for hop in now["sequence"].split(" -> ")), name  # same order, only hops removed
+        assert (now["latency_ms"], now["has_error"]) == (before["latency_ms"], before["has_error"]), name
+
+# Flag plumbing only (EventStream, flag lookups answered by flagd, lookups failing while flagd restarts): the trace goes
+for name in ("eventstream", "flagd_server_spans", "cart_flagd_outage"):
+    assert strip_flagd(real[name]) is None, name
+# A checkout flow that ends with cart looking up a flag on flagd: only those 5 flag spans go, and with them the last
+# two hops (cart is there only for the lookup)
+flow = real["business_trace_through_flagd"]
+assert (len(flow["spans"]), len(strip_flagd(flow)["spans"])) == (51, 46)
+assert j.process_trace(flow)["sequence"].endswith(" -> shipping -> cart -> flagd")
+assert j.process_trace(strip_flagd(flow))["sequence"] == j.process_trace(flow)["sequence"].removesuffix(" -> cart -> flagd")
+# productCatalogFailure on: same 19 spans, the flag events/attributes go, the error stays without the announcement
+catalog = strip_flagd(real["product_catalog_failure"])
+assert len(catalog["spans"]) == 19
+assert j.process_trace(real["product_catalog_failure"])["error_message"] == "13 INTERNAL: Error: Product Catalog Fail Feature Flag Enabled"
+assert j.process_trace(catalog)["error_message"] == "13 INTERNAL: Error: Product Catalog Fail"
+# ad crash-looping (adFailure, adManualGc): frontend can't reach it, nothing about flags in it, untouched
+assert strip_flagd(real["ad_unavailable"]) is real["ad_unavailable"]
 
 # Page full of stream traces: search again per operation and return the real ones
 def fake_get(url, params=None):
