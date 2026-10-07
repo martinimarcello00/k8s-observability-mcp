@@ -1,4 +1,6 @@
 import json
+import os
+import time
 import requests
 import logging
 from typing import Optional, Dict, List, Any
@@ -60,6 +62,9 @@ class JaegerAPI(BaseK8sClient):
             params["minDuration"] = f"{int(min_latency_ms)}ms"
         if only_errors:
             params["tags"] = '{"error":"true"}'
+        if os.environ.get("JAEGER_START_US"):
+            # Jaeger ignores lookback (it searches the whole store): the harness gives the instant the environment was ready
+            params["start"], params["end"] = os.environ["JAEGER_START_US"], int(time.time() * 1e6)
 
         def search(extra: Dict[str, str] = {}) -> List[Dict[str, Any]]:
             response = requests.get(api_url, params={**params, **extra})

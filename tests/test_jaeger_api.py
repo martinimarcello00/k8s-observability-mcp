@@ -79,4 +79,14 @@ def fake_get(url, params=None):
     return NS(raise_for_status=lambda: None, json=lambda: {"data": data})
 jaeger_api.requests.get, j.jaeger_url = fake_get, "http://jaeger"
 assert [t["traceID"] for t in j.get_jaeger_traces("frontend-proxy", limit=3)] == ["t1"]
+
+# Jaeger ignores lookback: with JAEGER_START_US set the query carries start/end, without it neither
+seen = []
+jaeger_api.requests.get = lambda url, params=None: seen.append(params) or NS(raise_for_status=lambda: None, json=lambda: {"data": []})
+j.get_jaeger_traces("frontend-proxy")
+assert "start" not in seen[-1] and "end" not in seen[-1]
+os.environ["JAEGER_START_US"] = "1000"
+j.get_jaeger_traces("frontend-proxy")
+assert seen[-1]["start"] == "1000" and int(seen[-1]["end"]) > 1000
+del os.environ["JAEGER_START_US"]
 print("ok")
