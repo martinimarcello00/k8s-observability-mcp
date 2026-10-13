@@ -2,8 +2,9 @@
 
 This folder contains a simple service dependency graph used by the MCP tools.
 
-- 🔎 Source of truth: Jaeger traces (to find service-to-service CALLS)
+- 🔎 Source of truth: Jaeger traces and deployment config endpoints (to find service-to-service CALLS)
 - 🧩 Extras: static info for infra dependencies (USES) like databases and caches
+- 🚫 Only root-cause candidates are modeled: application services and their stateful backends. Control plane, telemetry, traffic generation and fault-injection components (e.g. consul, jaeger, load-generator, flagd) are left out, so the agent never sees how faults are injected (Removing the possible bias)
 - 🗃️ Storage: Neo4j with nodes and relationships
 
 ## What it is
@@ -11,10 +12,10 @@ This folder contains a simple service dependency graph used by the MCP tools.
 A small Neo4j graph that models:
 
 - Services: (:Service {name})
-- Datastores/Caches: (:Database), (:Cache)
+- Datastores/Caches/Queues: (:Database), (:Cache), (:MessageQueue)
 - Relationships:
   - (:Service)-[:CALLS]->(:Service)
-  - (:Service)-[:USES]->(:Database|:Cache)
+  - (:Service)-[:USES]->(:Database|:Cache|:MessageQueue)
 
 ## How it’s built
 

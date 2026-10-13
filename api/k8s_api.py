@@ -1,5 +1,5 @@
 from typing import Optional, Dict, List, Any
-from .base_k8s_client import BaseK8sClient
+from .base_k8s_client import BaseK8sClient, MECHANISM
 from .config_manager import ConfigManager
 
 class K8sAPI(BaseK8sClient):
@@ -31,6 +31,8 @@ class K8sAPI(BaseK8sClient):
             return {"error": f"Could not list pods in namespace '{self.namespace}': {e.body}"} #type: ignore
 
         for pod in pod_list.items:
+            if MECHANISM.search(pod.metadata.name):
+                continue
             pod_issues = []
 
             # A pod might not have container_statuses if it's still pending scheduling
