@@ -1,29 +1,29 @@
-# ☸️ K8s Observability MCP
+# K8s Observability MCP
 
 Small MCP server that lets you explore Kubernetes metrics, logs, traces, and service graph data via simple tools.
 
-- 🐍 Python 3.13
-- 📈 Prometheus
-- 🔎 Jaeger
-- 🕸️ Neo4j
-- ☸️ Kubernetes API
+- Python 3.13
+- Prometheus
+- Jaeger
+- Neo4j
+- Kubernetes API
 
 ## Features
 
-- 📊 Get pod/service metrics (instant and range)
-- 📜 Read pod/service logs with important-line filtering
-- 🔗 Service map from Neo4j (uses/depends)
-- 🧭 Cluster overview (pods and services)
-- 🧵 Trace summaries and details from Jaeger
+- Get pod/service metrics (instant and range)
+- Read pod/service logs with important-line filtering
+- Service map from Neo4j (uses/depends)
+- Cluster overview (pods and services)
+- Trace summaries and details from Jaeger
 
 ## Requirements
 
-- 🐍 Python 3.13+
-- 📦 Poetry
-- ☸️ Access to your cluster (kubeconfig on this machine)
-- 📈 Prometheus URL
-- 🔎 Jaeger URL
-- 🕸️ Neo4j URI, user, password
+- Python 3.13+
+- Poetry
+- Access to your cluster (kubeconfig on this machine)
+- Prometheus URL
+- Jaeger URL
+- Neo4j URI, user, password
 
 ## Setup
 
@@ -50,7 +50,7 @@ Then connect with your MCP client to use the tools.
 
 ## Tools
 
-### 🔍 **Kubernetes Resource Inspection**
+### **Kubernetes Resource Inspection**
 
 - **`get_pods_from_service(service)`**
   - Returns all pods belonging to a specific service
@@ -60,7 +60,7 @@ Then connect with your MCP client to use the tools.
   - Comprehensive cluster overview
   - Lists all pods and services with counts
 
-### 📊 **Metrics & Observability**
+### **Metrics & Observability**
 
 - **`get_metrics(resource_name, resource_type)`**
   - Retrieves instant Prometheus metrics for a pod or service
@@ -84,7 +84,7 @@ Then connect with your MCP client to use the tools.
     - `tail`: Number of recent log lines to retrieve (default: 100)
     - `important`: If true, filter for ERROR, WARN, CRITICAL keywords (default: true)
 
-### 🔗 **Service Dependencies & Graph**
+### **Service Dependencies & Graph**
 
 - **`get_services_used_by(service)`**
   - Returns downstream services called by the given service
@@ -94,7 +94,7 @@ Then connect with your MCP client to use the tools.
   - Retrieves infrastructure dependencies for a service
   - Includes databases, caches, message queues, etc.
 
-### 🧵 **Distributed Tracing**
+### **Distributed Tracing**
 
 - **`get_traces(service_name, only_errors=False)`**
   - Retrieves traces for a specific service from Jaeger
@@ -113,4 +113,4 @@ Then connect with your MCP client to use the tools.
 
 - Uses your default kubeconfig. Set TARGET_NAMESPACE in .env to scope queries.
 
-- 🕸️ Service graph docs: see `service-graph/README.md` for how the Neo4j service graph is built (Jaeger CALLS + static USES), how to load it, and the result image.
+- Service graph docs: see `service-graph/README.md` for how the Neo4j service graph is built (Jaeger CALLS + static USES), how to load it, and the result image.
