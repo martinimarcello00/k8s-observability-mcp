@@ -2,7 +2,8 @@
 
     poetry run python -m anomaly.build RAW_APP_DIR OUT_DIR [--step 30]
 
-RAW_APP_DIR is <out>/<app> of collect_dataset.py. For every run, its last valid attempt becomes OUT_DIR/<kind>/<run>.npz:
+RAW_APP_DIR is <out>/<app> of collect_dataset.py. Next to the arrays below, OUT_DIR/<kind>/<run>.spans.csv.gz and
+.logs.csv.gz hold one row per span and per log line (anomaly/typed.py). For every run, its last valid attempt becomes OUT_DIR/<kind>/<run>.npz:
   x [T, S, F] float32   feature values, NaN where no sample fell in the grid step
   mask [T, S, F] bool   True where x holds a real value
   t [T]                 grid times (end of each step, unix seconds)
@@ -45,6 +46,22 @@ MAX_MASKED = 0.2  # V3: at most this share of empty cells overall, and twice thi
 def datagraph_services(path):
     """Services, databases and caches of the datagraph, in file order: the S axis."""
     return [name for _, name in re.findall(r"MERGE \(\w*:(\w+) \{name: '([^']+)'\}\)", Path(path).read_text())]
+
+
+def datagraph_edges(path):
+    """(source, relation, target) of the datagraph: CALLS between services, USES towards databases and caches.
+
+    Cypher names nodes through variables: a statement's own declarations win over those made elsewhere in the file.
+    """
+    declare = re.compile(r"\((\w+):\w+ \{name: '([^']+)'\}\)")
+    text = Path(path).read_text()
+    names = dict(declare.findall(text))
+    edges = []
+    for statement in text.split(";"):
+        local = {**names, **dict(declare.findall(statement))}
+        for a, rel, b in re.findall(r"MERGE \((\w+)\)-\[:(\w+)\]->\((\w+)\)", statement):
+            edges.append((local.get(a, a), rel, local.get(b, b)))
+    return edges
 
 
 def pod_service(pod):
@@ -229,6 +246,9 @@ def main(argv=None):
         target.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(target.with_suffix(".npz"), **arrays)
         target.with_suffix(".json").write_text(json.dumps(labels, indent=1))
+        from anomaly import typed  # pandas: only the typed tables need it
+        typed.spans(attempt).to_csv(f"{target}.spans.csv.gz", index=False)
+        typed.logs(attempt).to_csv(f"{target}.logs.csv.gz", index=False)
         verdict = {k: v[0] for k, v in labels["checks"].items() if k != "window"}
         print(f"{run_dir.parent.name}/{run_dir.name}: {arrays['x'].shape}, masked {labels['checks']['V3_coverage'][1]['masked_share']}, {verdict}")
 
