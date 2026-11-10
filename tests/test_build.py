@@ -94,4 +94,11 @@ assert ok(fake("test", 1600.0, errors=3))["V2_health"] is False
 clean = fake("clean", restart_at=1600.0)
 assert clean["V2_health"][1]["restarted"] == ["geo"] and clean["V1_load"][1]["short"] == [(1300, 30, 12.0)]  # a clean session has no excuse
 
+# --- V4: host I/O wait share, from per-CPU counters of one node exporter; the second node repeats the same kernel
+cpu = lambda node, mode, per_s: {"metric": {"instance": node, "cpu": "0", "mode": mode},
+                                  "values": [[t, per_s * (t - 1000)] for t in range(1000, 1121, 15)]}
+series = [cpu("n1", "idle", 0.9), cpu("n1", "iowait", 0.1), cpu("n2", "idle", 0.0), cpu("n2", "iowait", 1.0)]
+share = b.host_iowait(series, np.array([1030.0, 1060.0, 1090.0, 1120.0]), 30)
+assert np.allclose(share, 0.1)  # n1 only: 0.1 of its CPU time waits for the disk
+
 print("ok")

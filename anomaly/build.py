@@ -9,7 +9,7 @@ RAW_APP_DIR is <out>/<app> of collect_dataset.py. Next to the arrays below, OUT_
   t [T]                 grid times (end of each step, unix seconds)
   rate, mix [T]         load of the wrk2 segment at each step (-1 outside the schedule)
   services, features    names of the S and F axes
-and OUT_DIR/<kind>/<run>.json: labels, split, load schedule and the validity checks V1-V3.
+and OUT_DIR/<kind>/<run>.json: labels, split, load schedule and the validity checks V1-V4.
 Nothing is normalized or windowed here: that belongs to training, which must see only the train split.
 """
 import argparse
@@ -41,6 +41,9 @@ FEATURES = [
 ]
 MIN_RATE_SHARE = 0.9  # V1: a wrk2 segment must deliver at least this share of its target rate
 MAX_MASKED = 0.2  # V3: at most this share of empty cells overall, and twice this for any service and feature
+# V4: at most this share of the host's CPU time waiting for the disk, on average over the run. Healthy pilot runs stay
+# under 1.5% on average; a single 30 s step reaches 5% in them too, so the worst step is reported but not judged
+MAX_IOWAIT = 0.05
 
 
 def datagraph_services(path):
@@ -193,6 +196,33 @@ def checks(meta, segments, x, mask, grid, features, services):
     return {"window": [t0, t1], "V1_load": v1, "V2_health": v2, "V3_coverage": v3}
 
 
+def host_iowait(series, grid, step):
+    """Share of the host's CPU time spent waiting for the disk, per grid step, from node_cpu_seconds_total.
+
+    The kind nodes share the host's kernel, so one node exporter is enough. On a slow disk the databases stall on
+    their writes: the services then slow down for a reason that is neither the load nor the fault.
+    """
+    node = next((s["metric"].get("instance") for s in series), None)
+    by_mode = defaultdict(lambda: np.zeros(len(grid)))
+    for s in series:
+        if s["metric"].get("instance") == node:
+            by_mode[s["metric"]["mode"]] += np.nan_to_num(on_grid(series_points(s["values"], "rate"), grid, step))
+    total = sum(by_mode.values(), np.zeros(len(grid)))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(total > 0, by_mode["iowait"] / total, np.nan)
+
+
+def host_io_check(attempt_dir, grid, step):
+    """V4 on the whole run, fault included: a stalled disk disturbs the response to the fault as much as the normal state."""
+    path = Path(attempt_dir) / "prometheus" / "extra_node_cpu.json.gz"
+    if not path.exists():
+        return (False, {"missing": "extra_node_cpu"})
+    with gzip.open(path, "rt") as f:
+        share = host_iowait(json.load(f), grid, step)
+    worst, mean = float(np.nanmax(share, initial=0)), float(np.nanmean(share)) if np.isfinite(share).any() else float("nan")
+    return (mean <= MAX_IOWAIT, {"mean": round(mean, 4), "worst_step": round(worst, 4)})
+
+
 def build_run(attempt_dir, datagraph_dir, step=30):
     """Arrays and labels of one valid attempt."""
     attempt_dir = Path(attempt_dir)
@@ -215,7 +245,8 @@ def build_run(attempt_dir, datagraph_dir, step=30):
     labels = {key: meta.get(key) for key in ("id", "kind", "rep", "split", "attempt", "app_scenario", "fault_type", "target",
                                               "accepted_targets", "schedule", "settle_s", "observe_s", "versions")}
     labels.update(t_workload=run_meta.get("t_workload"), t_inject=run_meta["t_inject"], t_injected=run_meta["t_injected"], step=step,
-                  checks=checks(meta, segments, x, mask, grid, features, services), segments=segments)
+                  checks={**checks(meta, segments, x, mask, grid, features, services), "V4_host_io": host_io_check(attempt_dir, grid, step)},
+                  segments=segments)
     arrays = dict(x=x.astype(np.float32), mask=mask, t=grid, rate=rate, mix=mix, services=np.array(services), features=np.array(features))
     return arrays, labels
 
