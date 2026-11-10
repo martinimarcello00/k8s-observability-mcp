@@ -23,10 +23,11 @@ def _tags(obj):
 
 
 def _kind(tags, operation):
-    """client or server. Social's C++ services set no span.kind tag, but name every operation ..._client or ..._server."""
+    """client or server. Social's C++ services set no span.kind tag, but name every operation ..._client or ..._server
+    (user-service once writes user_mongo_insert_cilent)."""
     if tags.get("span.kind"):
         return tags["span.kind"]
-    return "client" if operation.endswith("_client") else "server" if operation.endswith("_server") else ""
+    return "client" if operation.endswith(("_client", "_cilent")) else "server" if operation.endswith("_server") else ""
 
 
 def _span_row(trace, s):
@@ -68,6 +69,47 @@ def spans(run_dir):
                     for field, value in row.items():
                         columns[field].append(value)
     return pd.DataFrame(columns, columns=SPAN_FIELDS)
+
+
+DATASTORE_OP = re.compile(r"mongo|redis|memcached|mmc", re.I)  # Social names its memcached calls mmc_...
+STORES = ("mongodb", "redis", "memcached")  # the kind of datastore, as it appears in datagraph node names
+
+
+def add_callees(spans, graph):
+    """The spans with two columns more: callee, the datagraph node each client span calls ('' when unknown), and datastore.
+
+    The callee is, in order: the service of a child span in another service; for a call nobody answered, the service that
+    answered the same caller and operation elsewhere in the run; for a database or cache call (never traced), the only node of
+    that kind the caller USES in the datagraph. datastore also reads the operation name, so a USES edge missing from the
+    datagraph (Social's user-mention-service and user-memcached) leaves the callee '' but still marks the call.
+    """
+    from anomaly import build
+    stores = {name for name, kind in build.datagraph_nodes(graph) if kind in ("Database", "Cache")}
+    uses = {}
+    for caller, relation, node in build.datagraph_edges(graph):
+        if relation == "USES":
+            uses.setdefault((caller, next((s for s in STORES if s in node), "")), []).append(node)
+    client = spans.kind == "client"
+    children = spans.loc[spans.parent != "", ["trace", "parent", "service"]].rename(columns={"parent": "span", "service": "child"})
+    answered = (spans.loc[client, ["trace", "span", "service", "operation"]].reset_index().merge(children, on=["trace", "span"])
+                .query("child != service").drop_duplicates("index").set_index("index"))
+    callee = pd.Series("", index=spans.index, dtype=object)
+    callee[answered.index] = answered.child
+    # ponytail: learned within the run, so an operation never answered in the whole run stays ''; a mapping across runs if that bites
+    learned = (answered.value_counts(["service", "operation", "child"]).reset_index()
+               .drop_duplicates(["service", "operation"]).set_index(["service", "operation"]).child.to_dict())
+    store_ops = {op for op in spans.operation.unique() if DATASTORE_OP.search(op)}
+    is_store_op = client & spans.operation.isin(store_ops)
+    for caller, operation in spans.loc[is_store_op, ["service", "operation"]].drop_duplicates().itertuples(index=False):
+        kind = "mongodb" if "mongo" in operation else "redis" if "redis" in operation else "memcached"
+        nodes = uses.get((caller, kind), [])
+        if len(nodes) == 1:
+            learned.setdefault((caller, operation), nodes[0])
+    todo = client & (callee == "")
+    if todo.any() and learned:
+        pairs = pd.MultiIndex.from_frame(spans.loc[todo, ["service", "operation"]])
+        callee[todo] = pd.Series(learned).reindex(pairs).fillna("").to_numpy()
+    return spans.assign(callee=callee, datastore=is_store_op | callee.isin(stores))
 
 
 # --- logs
@@ -139,18 +181,82 @@ def logs(run_dir, service_of=lambda pod: pod.rsplit("-", 2)[0]):
 
 # --- analyses on the span table
 
-def span_features(spans, grid, step):
-    """Per grid step (t - step, t] and service: requests served, p50 and p95 latency in ms, error share.
+MIN_SPANS = 20  # below it p50 and p95 are masked: a p95 of 4 spans is their max. A calibration knob, not a measured constant
 
-    A request served = a server span, or a root span (Social's nginx tags no span kind). The exported traces are a sample
-    (Jaeger sampling, then at most 5 traces/s kept by the export): requests count the sample, not the traffic.
+
+def span_features(spans, grid, step, sampling=None, min_spans=MIN_SPANS):
+    """Per grid step (t - step, t] and node, from the spans through add_callees.
+
+    Served side, for the traced services: requests (spans in the sample), rps (requests per second of real traffic:
+    requests / step / sampling, NaN when the sampling is unknown), p50_ms and p95_ms (NaN under min_spans requests),
+    error_share. A request served = a server span, or a root span (Social's nginx tags no span kind).
+    Called side, for every node client spans call, databases and caches included: calls_in, failed_share (the client
+    span or its child failed), unanswered_share (no child at all; NaN for databases and caches, which never answer
+    with a span). It puts a fault on the broken node, which often has no span of its own (a crashed service).
+    Every trace is exported (Hotel samples 100%, Social 60%), so the shares and percentiles need no rescaling.
+    Inside the steps the export covers, a node that served or received nothing has requests or calls_in 0, not a gap.
     """
-    server = spans[(spans.kind == "server") | (spans.parent == "")].copy()
-    cell = np.searchsorted(grid, server.start_us / 1e6, side="left")
-    ok = (cell < len(grid)) & (grid[np.minimum(cell, len(grid) - 1)] - server.start_us / 1e6 < step)
-    server = server[ok].assign(t=grid[cell[ok]], ms=lambda d: d.duration_us / 1000)
-    return server.groupby(["t", "service"]).agg(requests=("span", "size"), p50_ms=("ms", "median"),
-                                                 p95_ms=("ms", lambda v: v.quantile(0.95)), error_share=("error", "mean")).reset_index()
+    def on_grid(frame):
+        cell = np.searchsorted(grid, frame.start_us / 1e6, side="left")
+        ok = (cell < len(grid)) & (grid[np.minimum(cell, len(grid) - 1)] - frame.start_us / 1e6 < step)
+        return frame[ok].assign(t=grid[cell[ok]])
+
+    def filled(frame, count):  # 0 for every node of the frame in every step between the first and the last span
+        full = pd.MultiIndex.from_product([covered, frame.index.get_level_values("service").unique()], names=["t", "service"])
+        frame = frame.reindex(frame.index.union(full))
+        frame[count] = frame[count].fillna(0)
+        return frame
+
+    covered = grid[(grid - step >= spans.start_us.min() / 1e6) & (grid <= spans.start_us.max() / 1e6)]
+    server = on_grid(spans.loc[(spans.kind == "server") | (spans.parent == ""), ["start_us", "duration_us", "service", "error"]])
+    ms = (server.duration_us / 1000).groupby([server.t, server.service])
+    served = pd.DataFrame({"requests": ms.size(), "p50_ms": ms.median(), "p95_ms": ms.quantile(0.95),
+                           "error_share": server.error.groupby([server.t, server.service]).mean()})
+    kids = (spans.loc[spans.parent != "", ["trace", "parent", "error"]].groupby(["trace", "parent"]).error.max()
+            .rename("child_error").rename_axis(["trace", "span"]).reset_index())
+    calls = on_grid(spans.loc[(spans.kind == "client") & (spans.callee != ""), ["trace", "span", "start_us", "callee", "error", "datastore"]]
+                    .merge(kids, on=["trace", "span"], how="left"))
+    calls = calls.assign(unanswered=calls.child_error.isna(), failed=(calls.error == 1) | (calls.child_error == 1)).rename(columns={"callee": "service"})
+    by = calls.groupby(["t", "service"])
+    called = pd.DataFrame({"calls_in": by.size(), "unanswered_share": by.unanswered.mean(), "failed_share": by.failed.mean()})
+    stores = set(calls.service[calls.datastore])
+    called.loc[called.index.get_level_values("service").isin(stores), "unanswered_share"] = np.nan
+    out = filled(served, "requests").join(filled(called, "calls_in"), how="outer")
+    out.loc[out.requests < min_spans, ["p50_ms", "p95_ms"]] = np.nan
+    out.insert(1, "rps", out.requests / step / sampling if sampling else np.nan)
+    return out.rename_axis(["t", "service"]).reset_index()
+
+
+def trace_check(spans, attempt, labels, min_share=0.9, block_s=10):
+    """V5: are the run's traces whole? (passed, detail), like V1-V4, but it gates the trace features only, never the metrics.
+
+    - Jaeger kept its memory store: no restart and no new pod since before the grid starts (both would wipe every trace);
+    - in each observed load segment of the window of V1-V3 (30 s or longer, wrk2 reported), the root spans are at least
+      min_share of the requests wrk2 delivered times the sampling;
+    - no export block reached its limit inside a load segment (a full block lost its oldest traces).
+    A run without trace_sampling comes from the export before pilot2 (at most 5 traces/s kept): it does not pass.
+    """
+    attempt = Path(attempt)
+    meta = json.loads((attempt / "meta.json").read_text())
+    sampling = meta.get("trace_sampling")
+    if not sampling:
+        return False, {"reason": "no trace_sampling: export before pilot2, at most 5 traces/s kept"}
+    with gzip.open(attempt / "pods.json.gz", "rt") as f:
+        jaeger = [c for p in json.load(f)["items"] if "jaeger" in p["metadata"]["name"] for c in p["status"].get("containerStatuses", [])]
+    start = labels["t_workload"] or labels["t_inject"]
+    started = [pd.Timestamp(c["state"]["running"]["startedAt"]).timestamp() for c in jaeger if "running" in c.get("state", {})]
+    kept = bool(jaeger) and len(started) == len(jaeger) and all(c["restartCount"] == 0 for c in jaeger) and max(started) <= start
+    t0, t1 = labels["checks"]["window"]
+    segments = [s for s in labels["segments"] if t0 < s["start"] + s["seconds"] <= t1 and s["seconds"] >= 30 and s["delivered"]]
+    roots = np.sort(spans.start_us[spans.parent == ""].to_numpy() / 1e6)
+    shares = [(s["start"], s["rate"], round(float(np.searchsorted(roots, s["start"] + s["seconds"]) - np.searchsorted(roots, s["start"]))
+                                            / (s["delivered"] * s["seconds"] * sampling), 3)) for s in segments]
+    full = [b for b in meta.get("jaeger_full_blocks") or [] if any(s["start"] < b + block_s and b < s["start"] + s["seconds"] for s in labels["segments"])]
+    passed = kept and all(share >= min_share for *_, share in shares) and not full
+    # completeness_judged False: no long segment ended in the window (a 300 s settle often holds none), so only Jaeger and the
+    # full blocks were checked
+    return passed, {"jaeger_kept": kept, "jaeger_restarts": sum(c["restartCount"] for c in jaeger), "completeness_judged": bool(shares),
+                    "worst_segment": min(shares, key=lambda s: s[2], default=None), "segments": len(shares), "full_blocks_under_load": full}
 
 
 def trace_tree(spans, trace_id):
@@ -176,15 +282,16 @@ def call_edges(spans):
     """Service-to-service calls seen in the traces: every parent and child span that sit in two different services.
 
     Not every caller opens a client span (Social's nginx, or home-timeline reading posts), so the link is what counts.
-    A client span with no child at all is a call nobody answered, shown as callee '? <operation>': databases and caches
-    are not traced, so their calls always land there; a service that should answer and does not is a fault.
+    A client span with no child at all is a call nobody answered, shown with its callee from add_callees, or as
+    '? <operation>' when unknown: databases and caches are not traced, so their calls always land there; a service that
+    should answer and does not is a fault. Needs the spans through add_callees.
     """
     child = spans[["trace", "parent", "service", "error"]].rename(columns={"parent": "span", "service": "callee", "error": "failed"})
     pairs = spans[["trace", "span", "service"]].merge(child, on=["trace", "span"])
     answered = (pairs[pairs.service != pairs.callee].groupby(["service", "callee"])
                 .agg(calls=("span", "size"), errors=("failed", "sum")).reset_index().assign(unanswered=0))
     lonely = unanswered_calls(spans)
-    unanswered = (lonely.assign(callee="? " + lonely.operation).groupby(["service", "callee"])
+    unanswered = (lonely.assign(callee=lonely.callee.where(lonely.callee != "", "? " + lonely.operation)).groupby(["service", "callee"])
                   .agg(calls=("span", "size"), errors=("error", "sum")).reset_index().assign(unanswered=lambda d: d.calls))
     return (pd.concat([answered, unanswered]).rename(columns={"service": "caller"})[["caller", "callee", "calls", "unanswered", "errors"]]
             .sort_values("calls", ascending=False).reset_index(drop=True))

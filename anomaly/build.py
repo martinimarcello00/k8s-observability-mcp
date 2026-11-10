@@ -3,13 +3,14 @@
     poetry run python -m anomaly.build RAW_APP_DIR OUT_DIR [--step 30]
 
 RAW_APP_DIR is <out>/<app> of collect_dataset.py. Next to the arrays below, OUT_DIR/<kind>/<run>.spans.csv.gz and
-.logs.csv.gz hold one row per span and per log line (anomaly/typed.py). For every run, its last valid attempt becomes OUT_DIR/<kind>/<run>.npz:
+.logs.csv.gz hold one row per span (with the node each call goes to) and per log line (anomaly/typed.py). For every run, its last valid attempt becomes OUT_DIR/<kind>/<run>.npz:
   x [T, S, F] float32   feature values, NaN where no sample fell in the grid step
   mask [T, S, F] bool   True where x holds a real value
   t [T]                 grid times (end of each step, unix seconds)
   rate, mix [T]         load of the wrk2 segment at each step (-1 outside the schedule)
   services, features    names of the S and F axes
-and OUT_DIR/<kind>/<run>.json: labels, split, load schedule and the validity checks V1-V4.
+and OUT_DIR/<kind>/<run>.json: labels, split, load schedule, the validity checks V1-V4 and V5_traces, whether the run's
+traces are whole (it gates the trace features only, never the metrics).
 Nothing is normalized or windowed here: that belongs to training, which must see only the train split.
 """
 import argparse
@@ -46,9 +47,14 @@ MAX_MASKED = 0.2  # V3: at most this share of empty cells overall, and twice thi
 MAX_IOWAIT = 0.05
 
 
+def datagraph_nodes(path):
+    """(name, type) of the datagraph's nodes in file order; the type is Service, Database or Cache."""
+    return [(name, kind) for kind, name in re.findall(r"MERGE \(\w*:(\w+) \{name: '([^']+)'\}\)", Path(path).read_text())]
+
+
 def datagraph_services(path):
     """Services, databases and caches of the datagraph, in file order: the S axis."""
-    return [name for _, name in re.findall(r"MERGE \(\w*:(\w+) \{name: '([^']+)'\}\)", Path(path).read_text())]
+    return [name for name, _ in datagraph_nodes(path)]
 
 
 def datagraph_edges(path):
@@ -243,7 +249,7 @@ def build_run(attempt_dir, datagraph_dir, step=30):
     rate, mix = load_on_grid(segments, grid)
     features = [f[0] for f in FEATURES]
     labels = {key: meta.get(key) for key in ("id", "kind", "rep", "split", "attempt", "app_scenario", "fault_type", "target",
-                                              "accepted_targets", "schedule", "settle_s", "observe_s", "versions")}
+                                              "accepted_targets", "schedule", "settle_s", "observe_s", "versions", "trace_sampling")}
     labels.update(t_workload=run_meta.get("t_workload"), t_inject=run_meta["t_inject"], t_injected=run_meta["t_injected"], step=step,
                   checks={**checks(meta, segments, x, mask, grid, features, services), "V4_host_io": host_io_check(attempt_dir, grid, step)},
                   segments=segments)
@@ -273,14 +279,16 @@ def main(argv=None):
             print(f"{run_dir.parent.name}/{run_dir.name}: no valid attempt, skipped")
             continue
         arrays, labels = build_run(attempt, args.datagraph, args.step)
+        from anomaly import typed  # pandas: only the typed tables need it
+        spans = typed.add_callees(typed.spans(attempt), args.datagraph / DATAGRAPH[labels["app_scenario"]])
+        labels["V5_traces"] = typed.trace_check(spans, attempt, labels)  # apart from checks: it gates the trace features only
         target = args.out / run_dir.parent.name / run_dir.name
         target.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(target.with_suffix(".npz"), **arrays)
         target.with_suffix(".json").write_text(json.dumps(labels, indent=1))
-        from anomaly import typed  # pandas: only the typed tables need it
-        typed.spans(attempt).to_csv(f"{target}.spans.csv.gz", index=False)
+        spans.to_csv(f"{target}.spans.csv.gz", index=False)
         typed.logs(attempt).to_csv(f"{target}.logs.csv.gz", index=False)
-        verdict = {k: v[0] for k, v in labels["checks"].items() if k != "window"}
+        verdict = {k: v[0] for k, v in labels["checks"].items() if k != "window"} | {"V5_traces": labels["V5_traces"][0]}
         print(f"{run_dir.parent.name}/{run_dir.name}: {arrays['x'].shape}, masked {labels['checks']['V3_coverage'][1]['masked_share']}, {verdict}")
 
 
