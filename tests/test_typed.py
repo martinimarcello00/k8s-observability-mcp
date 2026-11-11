@@ -151,6 +151,14 @@ assert v5(roots=0, seconds=20) == (True, v5(roots=0, seconds=20)[1]) and v5(root
 
 lg = typed.logs(run)
 assert len(lg) == 1 and lg.iloc[0].level == "error" and lg.iloc[0].service == "frontend" and abs(lg.iloc[0].t - 1794159193.0) < 1e-3
+crash = Path(tempfile.mkdtemp())  # rate waits in CrashLoopBackOff (both files are the dead container), geo restarted and runs
+(crash / "logs").mkdir()
+for name, text in (("rate-1-a__rate.log.gz", "dead"), ("rate-1-a__rate.previous.log.gz", "dead"),
+                   ("geo-1-a__geo.log.gz", "new"), ("geo-1-a__geo.previous.log.gz", "old")):
+    with gzip.open(crash / "logs" / name, "wt") as f:
+        f.write(f"2026-11-08T17:33:13.000000001Z {text}\n")
+lg = typed.logs(crash)
+assert sorted(zip(lg.service, lg.previous, lg.message)) == [("geo", 0, "new"), ("geo", 1, "old"), ("rate", 1, "dead")]
 
 # --- datagraph edges in both styles: Hotel declares nodes in each MATCH, Social once with short variables
 graph = Path(tempfile.mkdtemp()) / "g.txt"

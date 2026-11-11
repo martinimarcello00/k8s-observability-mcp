@@ -158,7 +158,11 @@ def parse_log_line(content):
 
 
 def logs(run_dir, service_of=lambda pod: pod.rsplit("-", 2)[0]):
-    """Every container log line of the run (wrk2's excluded: it is the load, parsed by the builder), with kubectl's timestamp."""
+    """Every container log line of the run (wrk2's excluded: it is the load, parsed by the builder), with kubectl's timestamp.
+
+    A container waiting in CrashLoopBackOff has no current instance: kubectl gives the dead one's log both with and without
+    --previous, so the current file is skipped when it equals the previous one and the lines are kept once, as previous.
+    """
     rows = []
     for path in sorted((Path(run_dir) / "logs").glob("*.log.gz")):
         if path.name == "wrk2.log.gz":
@@ -166,6 +170,9 @@ def logs(run_dir, service_of=lambda pod: pod.rsplit("-", 2)[0]):
         name = path.name[:-len(".log.gz")]
         previous = name.endswith(".previous")
         pod, container = name.removesuffix(".previous").split("__", 1)
+        dead = path.with_name(f"{name}.previous.log.gz")
+        if not previous and dead.exists() and gzip.open(dead).read() == gzip.open(path).read():
+            continue
         with gzip.open(path, "rt", errors="replace") as f:
             for line in f:
                 stamp, _, content = line.rstrip("\n").partition(" ")
