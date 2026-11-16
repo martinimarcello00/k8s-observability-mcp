@@ -5,6 +5,7 @@ these tables are derived and can be rebuilt with more columns at any time.
 """
 import gzip
 import json
+import math
 import re
 from pathlib import Path
 
@@ -189,9 +190,11 @@ def logs(run_dir, service_of=lambda pod: pod.rsplit("-", 2)[0]):
 # --- analyses on the span table
 
 MIN_SPANS = 20  # below it p50 and p95 are masked: a p95 of 4 spans is their max. A calibration knob, not a measured constant
+# V5 fails a run when more than this share of its steps under load lost traces; below it those steps are masked (trace_gaps)
+MAX_TRACE_GAPS = 0.05
 
 
-def span_features(spans, grid, step, sampling=None, min_spans=MIN_SPANS):
+def span_features(spans, grid, step, sampling=None, min_spans=MIN_SPANS, gaps=()):
     """Per grid step (t - step, t] and node, from the spans through add_callees.
 
     Served side, for the traced services: requests (spans in the sample), rps (requests per second of real traffic:
@@ -202,6 +205,7 @@ def span_features(spans, grid, step, sampling=None, min_spans=MIN_SPANS):
     with a span). It puts a fault on the broken node, which often has no span of its own (a crashed service).
     Every trace is exported (Hotel samples 100%, Social 60%), so the shares and percentiles need no rescaling.
     Inside the steps the export covers, a node that served or received nothing has requests or calls_in 0, not a gap.
+    The steps in `gaps` (V5's trace_gaps: Jaeger lost traces there) have every feature NaN: missing, not zero traffic.
     """
     def on_grid(frame):
         cell = np.searchsorted(grid, frame.start_us / 1e6, side="left")
@@ -231,16 +235,39 @@ def span_features(spans, grid, step, sampling=None, min_spans=MIN_SPANS):
     out = filled(served, "requests").join(filled(called, "calls_in"), how="outer")
     out.loc[out.requests < min_spans, ["p50_ms", "p95_ms"]] = np.nan
     out.insert(1, "rps", out.requests / step / sampling if sampling else np.nan)
+    out.loc[out.index.get_level_values("t").isin(list(gaps)), :] = np.nan
     return out.rename_axis(["t", "service"]).reset_index()
 
 
-def trace_check(spans, attempt, labels, min_share=0.9, block_s=10):
+def trace_gaps(spans, segments, grid, step, sampling, t_load):
+    """Grid steps (their end t) under load whose root spans fall short of what wrk2 delivered times the sampling, by
+    more than 3 sd of the sampling and more than 10 %: Jaeger lost traces there. Only for runs without a fault (a fault
+    removes traces on purpose). A segment cut by the export has no delivered rate: its requested rate stands in."""
+    roots = np.sort(spans.start_us[spans.parent == ""].to_numpy() / 1e6)
+    gaps = []
+    for t in grid:
+        a = t - step
+        if a < t_load:
+            continue
+        exp = sum((s["delivered"] or s["rate"]) * max(0.0, min(t, s["start"] + s["seconds"]) - max(a, s["start"])) for s in segments) * sampling
+        got = np.searchsorted(roots, t, side="right") - np.searchsorted(roots, a, side="right")  # (t - step, t], as on_grid
+        if exp >= 1 and exp - got > max(3 * math.sqrt(exp * (1 - sampling)), 0.1 * exp):
+            gaps.append(float(t))
+    return gaps
+
+
+def trace_check(spans, attempt, labels, min_share=0.9, block_s=10, grid=None):
     """V5: are the run's traces whole? (passed, detail), like V1-V4, but it gates the trace features only, never the metrics.
 
     - Jaeger kept its memory store: no restart and no new pod since before the grid starts (both would wipe every trace);
-    - in each observed load segment of the window of V1-V3 (30 s or longer, wrk2 reported), the root spans are at least
-      min_share of the requests wrk2 delivered times the sampling;
-    - no export block reached its limit inside a load segment (a full block lost its oldest traces).
+    - runs collected with Jaeger's own loss counters (meta.json jaeger_counters, from 2026-11-14): the collector's
+      trace_check passed, i.e. Jaeger dropped no span under load and no export second was full; nothing to mask;
+    - older clean sessions: the steps where Jaeger lost traces (trace_gaps; the gate's search of the whole store at the
+      injection, garbage collection of a large store) or touching a full export block are masked; the run fails when
+      they exceed MAX_TRACE_GAPS of its steps under load;
+    - older fault runs: in each observed load segment of the window of V1-V3 (30 s or longer, wrk2 reported), the root
+      spans are at least min_share of the requests wrk2 delivered times the sampling, and no full block under load.
+    detail["trace_gaps"] = the step ends whose trace features span_features must mask (pass them as `gaps`).
     A run without trace_sampling comes from the export before pilot2 (at most 5 traces/s kept): it does not pass.
     """
     attempt = Path(attempt)
@@ -259,11 +286,22 @@ def trace_check(spans, attempt, labels, min_share=0.9, block_s=10):
     shares = [(s["start"], s["rate"], round(float(np.searchsorted(roots, s["start"] + s["seconds"]) - np.searchsorted(roots, s["start"]))
                                             / (s["delivered"] * s["seconds"] * sampling), 3)) for s in segments]
     full = [b for b in meta.get("jaeger_full_blocks") or [] if any(s["start"] < b + block_s and b < s["start"] + s["seconds"] for s in labels["segments"])]
-    passed = kept and all(share >= min_share for *_, share in shares) and not full
+    detail = {"jaeger_kept": kept, "jaeger_restarts": sum(c["restartCount"] for c in jaeger), "completeness_judged": bool(shares),
+              "worst_segment": min(shares, key=lambda s: s[2], default=None), "segments": len(shares), "full_blocks_under_load": full,
+              "trace_gaps": []}
+    if "jaeger_counters" in meta:
+        detail["collector_check"] = meta.get("trace_check")
+        return kept and meta.get("trace_check") is None, detail
+    if labels.get("kind") == "clean" and grid is not None:
+        step = labels["step"]
+        under_load = [float(t) for t in grid if t - step >= start]
+        gaps = set(trace_gaps(spans, labels["segments"], grid, step, sampling, start))
+        gaps |= {t for t in under_load for b in full if b < t and t - step < b + block_s}
+        detail.update(trace_gaps=sorted(gaps), steps_under_load=len(under_load))
+        return kept and len(gaps) <= MAX_TRACE_GAPS * len(under_load), detail
     # completeness_judged False: no long segment ended in the window (a 300 s settle often holds none), so only Jaeger and the
     # full blocks were checked
-    return passed, {"jaeger_kept": kept, "jaeger_restarts": sum(c["restartCount"] for c in jaeger), "completeness_judged": bool(shares),
-                    "worst_segment": min(shares, key=lambda s: s[2], default=None), "segments": len(shares), "full_blocks_under_load": full}
+    return kept and all(share >= min_share for *_, share in shares) and not full, detail
 
 
 def trace_tree(spans, trace_id):

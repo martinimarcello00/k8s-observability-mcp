@@ -149,6 +149,47 @@ assert v5(full=[1_000_000_000])[0] is True  # a full block outside the load (Soc
 assert v5(sampling=None)[0] is False
 assert v5(roots=0, seconds=20) == (True, v5(roots=0, seconds=20)[1]) and v5(roots=0, seconds=20)[1]["completeness_judged"] is False
 
+# Steps masked where Jaeger lost traces: every feature of that step NaN, the others untouched
+fg = typed.span_features(s, grid, 30, sampling=0.5, min_spans=1, gaps=[1_000_030.0]).set_index(["t", "service"])
+assert fg.loc[1_000_030.0].isna().all().all() and fg.loc[(1_000_060.0, "frontend"), "requests"] == 1
+
+# trace_gaps: 10 req/s for 300 s, 100 % sampled, with 8 s missing in the step that ends at 1150
+T0 = 1_000_000_000
+held = np.array([t for t in np.arange(T0, T0 + 300, 0.1) if not T0 + 130 <= t < T0 + 138])
+hole = pd.DataFrame({"parent": [""] * len(held), "start_us": (held * 1e6).astype(np.int64)})
+load = [{"start": T0, "seconds": 300, "rate": 10, "delivered": 10.0}]
+g = np.arange(T0 + 30, T0 + 301, 30.0)
+assert typed.trace_gaps(hole, load, g, 30, 1.0, T0) == [T0 + 150.0]
+assert typed.trace_gaps(hole, load, g, 30, 1.0, T0 + 200) == []  # before the load nothing is judged
+# at 60 % sampling 8 s of 30 is still a loss; 2 s (7 %) is within the sampling's noise and the 10 % margin
+assert typed.trace_gaps(hole.iloc[::5], [{**load[0], "delivered": 2.0 / 0.6}], g, 30, 0.6, T0) == [T0 + 150.0]
+small = pd.DataFrame({"parent": "", "start_us": (np.array([t for t in np.arange(T0, T0 + 300, 0.1) if not T0 + 130 <= t < T0 + 132]) * 1e6).astype(np.int64)})
+assert typed.trace_gaps(small, load, g, 30, 1.0, T0) == []
+
+
+def v5_meta(meta_extra, labels_extra, roots=held):
+    attempt = Path(tempfile.mkdtemp())
+    (attempt / "meta.json").write_text(json.dumps({"trace_sampling": 1.0, "jaeger_full_blocks": [], **meta_extra}))
+    with gzip.open(attempt / "pods.json.gz", "wt") as f:
+        json.dump({"items": [{"metadata": {"name": "jaeger-1-a"}, "status": {"containerStatuses": [
+            {"restartCount": 0, "state": {"running": {"startedAt": "2001-09-09T01:00:00Z"}}}]}}]}, f)
+    sp = pd.DataFrame({"parent": [""] * len(roots), "start_us": (roots * 1e6).astype(np.int64)})
+    labels = {"t_workload": T0, "t_inject": T0 + 100, "step": 30, "kind": "clean", "segments": load,
+              "checks": {"window": [T0, T0 + 100]}, **labels_extra}
+    return typed.trace_check(sp, attempt, labels, grid=g)
+
+
+ok, det = v5_meta({}, {})  # an older clean session: one step of ten lost traces, masked; over 5 % of the steps fails it
+assert ok is False and det["trace_gaps"] == [T0 + 150.0] and det["steps_under_load"] == 10
+ok, det = v5_meta({}, {}, roots=np.arange(T0, T0 + 300, 0.1))
+assert ok is True and det["trace_gaps"] == []
+ok, det = v5_meta({"jaeger_full_blocks": [T0 + 200]}, {}, roots=np.arange(T0, T0 + 300, 0.1))
+assert ok is False and det["trace_gaps"] == [T0 + 210.0]  # a full export block masks the step it falls in
+ok, det = v5_meta({"jaeger_counters": {"samples": 90}, "trace_check": None}, {})  # collected with Jaeger's counters: trust them
+assert ok is True and det["trace_gaps"] == [] and det["collector_check"] is None
+assert v5_meta({"jaeger_counters": {"samples": 90}, "trace_check": "Jaeger lost spans under load: {}"}, {})[0] is False
+assert v5_meta({}, {"kind": "test"}, roots=np.arange(T0, T0 + 300, 0.1))[1]["trace_gaps"] == []  # fault runs: the older rule
+
 lg = typed.logs(run)
 assert len(lg) == 1 and lg.iloc[0].level == "error" and lg.iloc[0].service == "frontend" and abs(lg.iloc[0].t - 1794159193.0) < 1e-3
 crash = Path(tempfile.mkdtemp())  # rate waits in CrashLoopBackOff (both files are the dead container), geo restarted and runs

@@ -10,7 +10,8 @@ RAW_APP_DIR is <out>/<app> of collect_dataset.py. Next to the arrays below, OUT_
   rate, mix [T]         load of the wrk2 segment at each step (-1 outside the schedule)
   services, features    names of the S and F axes
 and OUT_DIR/<kind>/<run>.json: labels, split, load schedule, the validity checks V1-V4 and V5_traces, whether the run's
-traces are whole (it gates the trace features only, never the metrics).
+traces are whole (it gates the trace features only, never the metrics); V5_traces[1]["trace_gaps"] lists the steps whose
+trace features are missing (typed.span_features(..., gaps=...)).
 Nothing is normalized or windowed here: that belongs to training, which must see only the train split.
 """
 import argparse
@@ -281,7 +282,7 @@ def main(argv=None):
         arrays, labels = build_run(attempt, args.datagraph, args.step)
         from anomaly import typed  # pandas: only the typed tables need it
         spans = typed.add_callees(typed.spans(attempt), args.datagraph / DATAGRAPH[labels["app_scenario"]])
-        labels["V5_traces"] = typed.trace_check(spans, attempt, labels)  # apart from checks: it gates the trace features only
+        labels["V5_traces"] = typed.trace_check(spans, attempt, labels, grid=arrays["t"])  # apart from checks: it gates the trace features only
         target = args.out / run_dir.parent.name / run_dir.name
         target.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(target.with_suffix(".npz"), **arrays)
