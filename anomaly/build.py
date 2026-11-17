@@ -176,7 +176,7 @@ def load_on_grid(segments, grid):
     return rate, mix
 
 
-def checks(meta, segments, x, mask, grid, features, services):
+def checks(meta, segments, x, mask, grid, features, services, step=30):
     """V1 load delivered, V2 healthy (no restart, no HTTP error), V3 enough samples. Each is (passed, detail).
 
     A clean session is checked on its whole observation. A fault run is checked on its settle, before the injection:
@@ -191,7 +191,9 @@ def checks(meta, segments, x, mask, grid, features, services):
     v1 = (not short and covered, {"segments": len(observed), "short": [(s["start"], s["rate"], s["delivered"]) for s in short],
                                   "schedule_covers_run": covered})
     window = (grid > t0) & (grid <= t1)
-    restarts = x[window][:, :, features.index("restarts")]
+    # a step holds (t - step, t]: the first one may start before the load, where Hotel's services crash once at the deploy
+    # (their MongoDB is not up yet), so restarts count only in the steps that start after it
+    restarts = x[window & (grid - step >= t0)][:, :, features.index("restarts")]
     restarted = sorted(services[i] for i in np.where(np.nansum(restarts, axis=0) > 0)[0])
     errors = sum(s["non_2xx"] for s in observed)
     v2 = (not restarted and errors == 0, {"restarted": restarted, "non_2xx": errors})
@@ -252,7 +254,7 @@ def build_run(attempt_dir, datagraph_dir, step=30):
     labels = {key: meta.get(key) for key in ("id", "kind", "rep", "split", "attempt", "app_scenario", "fault_type", "target",
                                               "accepted_targets", "schedule", "settle_s", "observe_s", "versions", "trace_sampling")}
     labels.update(t_workload=run_meta.get("t_workload"), t_inject=run_meta["t_inject"], t_injected=run_meta["t_injected"], step=step,
-                  checks={**checks(meta, segments, x, mask, grid, features, services), "V4_host_io": host_io_check(attempt_dir, grid, step)},
+                  checks={**checks(meta, segments, x, mask, grid, features, services, step), "V4_host_io": host_io_check(attempt_dir, grid, step)},
                   segments=segments)
     arrays = dict(x=x.astype(np.float32), mask=mask, t=grid, rate=rate, mix=mix, services=np.array(services), features=np.array(features))
     return arrays, labels
