@@ -74,8 +74,8 @@ assert list(rate) == [-1, 10, 30, 30, -1] and list(mix) == [-1, 0, 2, 1, -1]
 
 
 # --- validity: a clean session on its observation, a fault run on its settle
-def fake(kind, restart_at, delivered=30.0, errors=0):
-    grid = np.arange(1030.0, 2030.0, 30)
+def fake(kind, restart_at, delivered=30.0, errors=0, first=1030.0):
+    grid = np.arange(first, 2030.0, 30)
     features = [f[0] for f in b.FEATURES]
     x = np.zeros((len(grid), 2, len(features)))
     x[grid == restart_at, 0, features.index("restarts")] = 0.03
@@ -89,9 +89,18 @@ def fake(kind, restart_at, delivered=30.0, errors=0):
 ok = lambda c: {k: v[0] for k, v in c.items() if k != "window"}
 assert ok(fake("test", restart_at=1600.0)) == {"V1_load": True, "V2_health": True, "V3_coverage": True}  # all after the fault
 assert ok(fake("test", restart_at=1150.0))["V2_health"] is False  # a restart during the settle: the environment was not healthy
+assert ok(fake("test", restart_at=1015.0, first=1015.0))["V2_health"] is True  # step (985, 1015] starts before the load: the deploy
+assert ok(fake("test", restart_at=1045.0, first=1015.0))["V2_health"] is False  # the next one is all under load
 assert ok(fake("test", 1600.0, delivered=20.0))["V1_load"] is False  # load not delivered before the fault
 assert ok(fake("test", 1600.0, errors=3))["V2_health"] is False
 clean = fake("clean", restart_at=1600.0)
 assert clean["V2_health"][1]["restarted"] == ["geo"] and clean["V1_load"][1]["short"] == [(1300, 30, 12.0)]  # a clean session has no excuse
+
+# --- V4: host I/O wait share, from per-CPU counters of one node exporter; the second node repeats the same kernel
+cpu = lambda node, mode, per_s: {"metric": {"instance": node, "cpu": "0", "mode": mode},
+                                  "values": [[t, per_s * (t - 1000)] for t in range(1000, 1121, 15)]}
+series = [cpu("n1", "idle", 0.9), cpu("n1", "iowait", 0.1), cpu("n2", "idle", 0.0), cpu("n2", "iowait", 1.0)]
+share = b.host_iowait(series, np.array([1030.0, 1060.0, 1090.0, 1120.0]), 30)
+assert np.allclose(share, 0.1)  # n1 only: 0.1 of its CPU time waits for the disk
 
 print("ok")

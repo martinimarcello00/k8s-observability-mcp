@@ -109,6 +109,14 @@ Then connect with your MCP client to use the tools.
     - `trace_id`: The unique trace ID to retrieve
   - Includes all spans with timestamps, durations, tags, and errors
 
+## Dataset
+
+- 🗂️ The anomaly-detection dataset that `anomaly/build.py` builds from the AIOpsLab Hotel Reservation and Social
+  Network runs. 
+  The dataset is composed of 132 runs (63 Hotel & 45 Social) and contains metrics, logs and traces (sampled at 100% for Hotel, 60% for Social).
+  [Keeevin16/AIOpsLab-app-collection-Hotel-Social](https://huggingface.co/datasets/Keeevin16/AIOpsLab-app-collection-Hotel-Social)
+  (CC BY-NC 4.0).
+
 ## Notes
 
 - Uses your default kubeconfig. Set TARGET_NAMESPACE in .env to scope queries.
