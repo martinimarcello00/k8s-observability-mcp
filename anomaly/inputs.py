@@ -56,3 +56,39 @@ def fill_misses(x, features, exists=None):
         out[:, :, c] = np.where(miss[:, :, None] & exists[None][:, :, c], prev[:, :, c], out[:, :, c])
         present[:, :, k] = ~whole(np.isnan(out), g)
     return out, present
+
+
+# B0, the feature set of the first models (2026-11-20): the 13 built features but cpu (exactly cpu_user + cpu_system) and
+# cpu_throttled (0 in every healthy Hotel run, absent in Social). mem_cache and mem_rss stay for now, to be judged later.
+B0 = ("cpu_user", "cpu_system", "mem_working_set", "mem_rss", "mem_cache", "threads",
+      "rx_bytes", "tx_bytes", "rx_packets", "tx_packets", "restarts")
+# Each feature is read in this unit before log1p, so that log1p is about linear up to 1 unit and logarithmic above it.
+# Memory is a change per 30 s step (see prepare). Restarts: the rate per second times 300, restarts per 5 minutes.
+UNITS = {"cpu": (1e3, "mC"), "cpu_user": (1e3, "mC"), "cpu_system": (1e3, "mC"), "cpu_throttled": (1e3, "mC"),
+         "mem_working_set": (2**-20, "MiB/step"), "mem_rss": (2**-20, "MiB/step"), "mem_cache": (2**-20, "MiB/step"),
+         "threads": (1, "threads"), "rx_bytes": (1, "B/s"), "tx_bytes": (1, "B/s"), "rx_packets": (1, "pkt/s"),
+         "tx_packets": (1, "pkt/s"), "restarts": (300, "per 5 min")}
+
+
+def prepare(x, features, keep=B0):
+    """Model input of one run, [T, S, len(keep)] from the raw x [T, S, F] of the builder; causal like fill_misses.
+
+    Values are filled (fill_misses), clipped at 0, read in UNITS and passed through log1p. Memory is the signed log1p of
+    its change since the previous step instead: the level of a store's memory is the integral of its past load, its
+    change is not. The first step has no change, so its memory is NaN.
+    """
+    v = np.clip(fill_misses(x, features)[0], 0, None)
+    out = []
+    for f in keep:
+        a = v[:, :, features.index(f)] * UNITS[f][0]
+        if f.startswith("mem"):
+            a = np.diff(a, axis=0, prepend=np.nan)
+            out.append(np.sign(a) * np.log1p(np.abs(a)))
+        else:
+            out.append(np.log1p(a))
+    return np.stack(out, axis=2)
+
+
+def to_units(o, feature):
+    """Inverse of prepare for one feature: from model input back to UNITS (memory: its change per step)."""
+    return np.sign(o) * np.expm1(np.abs(o)) if feature.startswith("mem") else np.expm1(o)
