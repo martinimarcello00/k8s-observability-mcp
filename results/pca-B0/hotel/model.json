@@ -1,0 +1,146 @@
+{
+ "frontend": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.996,
+  "threshold": 1.5953846644812835,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "user": {
+  "k": 3,
+  "columns": 9,
+  "variance_kept": 0.961,
+  "threshold": 4.417001943912431,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "recommendation": {
+  "k": 3,
+  "columns": 9,
+  "variance_kept": 0.9536,
+  "threshold": 6.1822032519030685,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "profile": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9925,
+  "threshold": 0.3258568629831574,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "search": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9968,
+  "threshold": 0.44952107004518055,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "reservation": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9739,
+  "threshold": 1.6054342757192983,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "geo": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9947,
+  "threshold": 0.45849799820451154,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "rate": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9946,
+  "threshold": 0.6037174322388342,
+  "left_out": [
+   "mem_cache"
+  ]
+ },
+ "mongodb-geo": {
+  "k": 6,
+  "columns": 10,
+  "variance_kept": 0.9598,
+  "threshold": 2.0575487693801295,
+  "left_out": []
+ },
+ "mongodb-profile": {
+  "k": 6,
+  "columns": 10,
+  "variance_kept": 0.9573,
+  "threshold": 2.703478022516472,
+  "left_out": []
+ },
+ "mongodb-rate": {
+  "k": 7,
+  "columns": 10,
+  "variance_kept": 0.9843,
+  "threshold": 1.9010012015632527,
+  "left_out": []
+ },
+ "mongodb-recommendation": {
+  "k": 6,
+  "columns": 10,
+  "variance_kept": 0.9618,
+  "threshold": 3.3323324011586495,
+  "left_out": []
+ },
+ "mongodb-reservation": {
+  "k": 5,
+  "columns": 10,
+  "variance_kept": 0.9631,
+  "threshold": 3.252103981623497,
+  "left_out": []
+ },
+ "mongodb-user": {
+  "k": 6,
+  "columns": 10,
+  "variance_kept": 0.9819,
+  "threshold": 0.7682941074203236,
+  "left_out": []
+ },
+ "memcached-profile": {
+  "k": 3,
+  "columns": 8,
+  "variance_kept": 0.979,
+  "threshold": 0.9744079418019688,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ]
+ },
+ "memcached-rate": {
+  "k": 3,
+  "columns": 8,
+  "variance_kept": 0.9843,
+  "threshold": 1.0794227771416929,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ]
+ },
+ "memcached-reserve": {
+  "k": 3,
+  "columns": 8,
+  "variance_kept": 0.9726,
+  "threshold": 1.277259008436103,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ]
+ }
+}

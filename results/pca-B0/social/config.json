@@ -1,0 +1,101 @@
+{
+ "app": "social",
+ "data": "/home/tecnico/datasets/full_v2-built",
+ "written_utc": "2026-11-21T15:25:04+00:00",
+ "code": {
+  "commit": "e57872797098d28efa94619a0d6fda6ea606b91f",
+  "uncommitted_changes": false
+ },
+ "model": "PCA per service, SPE persistent over 2 steps",
+ "features": [
+  "cpu_user",
+  "cpu_system",
+  "mem_working_set",
+  "mem_rss",
+  "mem_cache",
+  "threads",
+  "rx_bytes",
+  "tx_bytes",
+  "rx_packets",
+  "tx_packets"
+ ],
+ "rule": "restarts > 0 -> alarm on that service",
+ "VAR": 0.95,
+ "MIN_FINITE": 0.95,
+ "MIN_SD": 1e-06,
+ "threshold": "per service, max persistent SPE over train + val (loaded steps)",
+ "window_s": 900,
+ "runs": {
+  "fault-dev": [
+   "dev/net_delay_home_timeline_social_network__r1",
+   "dev/net_delay_home_timeline_social_network__r2",
+   "dev/pod_failure_user_timeline_mongodb_social_network__r1",
+   "dev/pod_failure_user_timeline_mongodb_social_network__r2",
+   "dev/stress_cpu_compose_post_20_social_network__r1",
+   "dev/stress_cpu_compose_post_20_social_network__r2",
+   "dev/stress_cpu_compose_post_5_social_network__r1",
+   "dev/stress_cpu_compose_post_5_social_network__r2",
+   "dev/stress_cpu_compose_post_80_social_network__r1",
+   "dev/stress_cpu_compose_post_80_social_network__r2"
+  ],
+  "fault-test": [
+   "test/assign_to_non_existent_node_social_network__r1",
+   "test/assign_to_non_existent_node_social_network__r2",
+   "test/assign_to_non_existent_node_social_network__r3",
+   "test/assign_to_non_existent_node_social_network__r4",
+   "test/assign_to_non_existent_node_social_network__r5",
+   "test/auth_miss_mongoDB_social_network__r1",
+   "test/auth_miss_mongoDB_social_network__r2",
+   "test/auth_miss_mongoDB_social_network__r3",
+   "test/auth_miss_mongoDB_social_network__r4",
+   "test/auth_miss_mongoDB_social_network__r5",
+   "test/port_misconfig_post_storage_social_network__r1",
+   "test/port_misconfig_post_storage_social_network__r2",
+   "test/port_misconfig_post_storage_social_network__r3",
+   "test/port_misconfig_post_storage_social_network__r4",
+   "test/port_misconfig_post_storage_social_network__r5",
+   "test/port_misconfig_text_social_network__r1",
+   "test/port_misconfig_text_social_network__r2",
+   "test/port_misconfig_text_social_network__r3",
+   "test/port_misconfig_text_social_network__r4",
+   "test/port_misconfig_text_social_network__r5",
+   "test/port_misconfig_user_social_network__r1",
+   "test/port_misconfig_user_social_network__r2",
+   "test/port_misconfig_user_social_network__r3",
+   "test/port_misconfig_user_social_network__r4",
+   "test/port_misconfig_user_social_network__r5",
+   "test/scale_pod_zero_social_netscale_pod_zero_social_network__r1",
+   "test/scale_pod_zero_social_netscale_pod_zero_social_network__r2",
+   "test/scale_pod_zero_social_netscale_pod_zero_social_network__r3",
+   "test/scale_pod_zero_social_netscale_pod_zero_social_network__r4",
+   "test/scale_pod_zero_social_netscale_pod_zero_social_network__r5"
+  ],
+  "noop": [
+   "test/noop_social_network__r1",
+   "test/noop_social_network__r2",
+   "test/noop_social_network__r3",
+   "test/noop_social_network__r4",
+   "test/noop_social_network__r5"
+  ],
+  "test": [
+   "clean/noop_social_network__r10",
+   "clean/noop_social_network__r9"
+  ],
+  "test-unseen": [
+   "clean/noop_social_network__r11",
+   "clean/noop_social_network__r12"
+  ],
+  "train": [
+   "clean/noop_social_network__r1",
+   "clean/noop_social_network__r2",
+   "clean/noop_social_network__r3",
+   "clean/noop_social_network__r4",
+   "clean/noop_social_network__r5",
+   "clean/noop_social_network__r6"
+  ],
+  "val": [
+   "clean/noop_social_network__r7",
+   "clean/noop_social_network__r8"
+  ]
+ }
+}

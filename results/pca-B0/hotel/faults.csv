@@ -1,0 +1,59 @@
+run,fold,scenario,targets,pca alarm,pca target in alarm,pca minutes,pca top1 first,pca top1 window,pca top3 window,pca+restart alarm,pca+restart target in alarm,pca+restart minutes,pca+restart top1 first,pca+restart top1 window,pca+restart top3 window,top3 at first alarm
+dev/net_delay_search_hotel_res__r1,dev,net_delay_search,search,0,0,,0,0,0,0,0,,0,0,0,
+dev/net_delay_search_hotel_res__r2,dev,net_delay_search,search,1,0,4.769484547773997,0,0,1,1,0,4.769484547773997,0,0,1,mongodb-user 1.1; geo 0.5; search 0.4
+dev/stress_cpu_search_20_hotel_res__r1,dev,stress_cpu_search_20,search,1,1,0.15929844379425048,0,1,1,1,1,0.15929844379425048,0,1,1,memcached-reserve 1.0; reservation 0.3; geo 0.3
+dev/stress_cpu_search_20_hotel_res__r2,dev,stress_cpu_search_20,search,1,1,0.7129713694254557,1,1,1,1,1,0.7129713694254557,1,1,1,search 16.6; memcached-reserve 0.5; mongodb-recommendation 0.2
+dev/stress_cpu_search_5_hotel_res__r1,dev,stress_cpu_search_5,search,1,1,1.0274466315905253,1,1,1,1,1,1.0274466315905253,1,1,1,search 14.8; memcached-reserve 0.5; mongodb-profile 0.2
+dev/stress_cpu_search_5_hotel_res__r2,dev,stress_cpu_search_5,search,1,1,0.8443315585454305,1,1,1,1,1,0.8443315585454305,1,1,1,search 3.3; memcached-reserve 0.4; mongodb-profile 0.3
+dev/stress_cpu_search_80_hotel_res__r1,dev,stress_cpu_search_80,search,1,1,1.2127816319465636,1,1,1,1,1,1.2127816319465636,1,1,1,search 13.8; mongodb-reservation 0.2; profile 0.1
+dev/stress_cpu_search_80_hotel_res__r2,dev,stress_cpu_search_80,search,1,1,1.079921821753184,1,1,1,1,1,1.079921821753184,1,1,1,search 44.3; memcached-reserve 0.4; memcached-profile 0.2
+test/container_kill_hotel_res__r1,test,container_kill,geo,1,0,0.7927855690320332,0,0,0,1,1,0.7927855690320332,1,1,1,geo 0.0 restart; mongodb-geo 440.3; reservation 0.2
+test/container_kill_hotel_res__r2,test,container_kill,geo,1,1,0.5064127326011658,1,1,1,1,1,0.5064127326011658,1,1,1,geo 2.1 restart; profile 1.5; mongodb-geo 0.8
+test/container_kill_hotel_res__r3,test,container_kill,geo,1,0,0.5863016525904338,0,0,1,1,1,0.5863016525904338,1,1,1,geo 0.1 restart; mongodb-geo 178.6; memcached-reserve 0.2
+test/container_kill_hotel_res__r4,test,container_kill,geo,0,0,,0,0,0,1,1,0.4246795535087585,1,1,1,geo 0.1 restart; memcached-reserve 0.4; mongodb-profile 0.2
+test/container_kill_hotel_res__r5,test,container_kill,geo,1,0,0.787800669670105,0,0,0,1,1,0.787800669670105,1,1,1,geo 0.0 restart; mongodb-geo 178.9; mongodb-reservation 0.2
+test/misconfig_app_hotel_res__r1,test,misconfig_app,geo,1,1,1.0246321082115173,0,0,1,1,1,1.0246321082115173,1,1,1,geo 74.7 restart; mongodb-geo 178.9; rate 2.0
+test/misconfig_app_hotel_res__r2,test,misconfig_app,geo,1,1,0.8263280669848124,0,0,1,1,1,0.8263280669848124,1,1,1,geo 4.4 restart; mongodb-geo 178.9; user 0.5
+test/misconfig_app_hotel_res__r3,test,misconfig_app,geo,1,1,0.6241217692693074,1,0,1,1,1,0.6241217692693074,1,1,1,geo 1.7 restart; reservation 0.4; memcached-reserve 0.2
+test/misconfig_app_hotel_res__r4,test,misconfig_app,geo,1,1,0.8985594590504964,0,0,1,1,1,0.39855945905049645,1,1,1,geo 0.1 restart; memcached-reserve 0.2; mongodb-geo 0.2
+test/misconfig_app_hotel_res__r5,test,misconfig_app,geo,1,1,1.024609891573588,0,0,1,1,1,0.5246098915735881,1,1,1,geo 0.2 restart; mongodb-geo 0.5; memcached-reserve 0.3
+test/network_delay_hotel_res__r1,test,network_delay,user,1,0,5.762054697672526,0,0,0,1,0,5.762054697672526,0,0,0,mongodb-user 324.4; profile 0.2; recommendation 0.2
+test/network_delay_hotel_res__r2,test,network_delay,user,1,0,0.9633610804875692,0,0,0,1,0,0.9633610804875692,0,0,0,mongodb-user 10.8; memcached-profile 0.6; mongodb-reservation 0.2
+test/network_delay_hotel_res__r3,test,network_delay,user,1,0,5.398352984587351,0,0,0,1,0,5.398352984587351,0,0,0,mongodb-user 1.0; memcached-reserve 0.3; mongodb-reservation 0.1
+test/network_delay_hotel_res__r4,test,network_delay,user,1,0,1.0066036740938822,0,0,0,1,0,1.0066036740938822,0,0,0,mongodb-user 3.8; mongodb-reservation 0.2; memcached-reserve 0.2
+test/network_delay_hotel_res__r5,test,network_delay,user,1,0,1.2760709285736085,0,0,0,1,0,1.2760709285736085,0,0,0,mongodb-reservation 1.2; memcached-rate 0.2; memcached-reserve 0.2
+test/network_loss_hotel_res__r1,test,network_loss,user,1,1,1.060908552010854,0,0,0,1,1,1.060908552010854,0,0,0,mongodb-user 5.7; user 0.7; rate 0.3
+test/network_loss_hotel_res__r2,test,network_loss,user,1,1,1.2755873998006184,0,0,0,1,1,1.2755873998006184,0,0,0,mongodb-user 15.3; user 3.1; memcached-reserve 0.5
+test/network_loss_hotel_res__r3,test,network_loss,user,1,1,1.2888964692751566,0,0,1,1,1,1.2888964692751566,0,0,1,mongodb-user 15.1; user 3.1; memcached-reserve 0.7
+test/network_loss_hotel_res__r4,test,network_loss,user,1,1,0.9215506831804912,0,0,0,1,1,0.9215506831804912,0,0,0,mongodb-user 3.2; memcached-profile 0.4; profile 0.2
+test/network_loss_hotel_res__r5,test,network_loss,user,1,1,1.3429478446642558,0,0,1,1,1,1.3429478446642558,0,0,1,mongodb-user 15.1; memcached-reserve 0.3; memcached-rate 0.2
+test/pod_failure_hotel_res__r1,test,pod_failure,user,1,1,0.6588817516962687,0,0,1,1,1,0.6588817516962687,1,1,1,user 0.1 restart; mongodb-user 1250.0; memcached-reserve 0.7
+test/pod_failure_hotel_res__r2,test,pod_failure,user,1,1,0.5499844749768575,0,0,1,1,1,0.5499844749768575,1,1,1,user 0.0 restart; mongodb-user 1.4; memcached-profile 0.3
+test/pod_failure_hotel_res__r3,test,pod_failure,user,1,1,0.7399239460627238,0,0,1,1,1,0.7399239460627238,1,1,1,user 0.0 restart; mongodb-user 2242.9; memcached-profile 0.1
+test/pod_failure_hotel_res__r4,test,pod_failure,user,1,1,1.074925422668457,0,0,1,1,1,0.574925422668457,1,1,1,user 0.1 restart; mongodb-user 0.5; memcached-reserve 0.4
+test/pod_failure_hotel_res__r5,test,pod_failure,user,1,1,0.7916145245234172,0,0,1,1,1,0.29161452452341713,1,1,1,user 0.0 restart; profile 0.4; rate 0.3
+test/revoke_auth_mongoDB_geo_hotel_res__r1,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1,0.8448888580004374,1,1,1,1,1,0.3448888580004374,1,1,1,geo 0.0 restart; memcached-reserve 0.3; mongodb-geo 0.3
+test/revoke_auth_mongoDB_geo_hotel_res__r2,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1,0.9636640866597493,1,1,1,1,1,0.46366408665974934,1,1,1,geo 0.0 restart; profile 0.4; memcached-reserve 0.3
+test/revoke_auth_mongoDB_geo_hotel_res__r3,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1,0.8774985154469808,1,1,1,1,1,0.3774985154469808,1,1,1,geo 0.0 restart; memcached-profile 0.2; memcached-reserve 0.2
+test/revoke_auth_mongoDB_geo_hotel_res__r4,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1,1.1730538964271546,1,1,1,1,1,0.6730538964271545,1,1,1,geo 0.1 restart; profile 0.3; memcached-rate 0.2
+test/revoke_auth_mongoDB_geo_hotel_res__r5,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1,0.8189008474349976,1,1,1,1,1,0.8189008474349976,1,1,1,geo 0.0 restart; mongodb-geo 47.2; profile 0.4
+test/revoke_auth_mongoDB_rate_hotel_res__r1,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,1,1.0912870605786642,1,1,1,1,1,0.5912870605786641,1,1,1,rate 0.1 restart; memcached-reserve 0.2; profile 0.1
+test/revoke_auth_mongoDB_rate_hotel_res__r2,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,1,1.242622196674347,1,1,1,1,1,0.7426221966743469,1,1,1,rate 0.1 restart; memcached-rate 0.5; memcached-reserve 0.3
+test/revoke_auth_mongoDB_rate_hotel_res__r3,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,1,1.2201578974723817,1,1,1,1,1,0.7201578974723816,1,1,1,rate 0.0 restart; memcached-reserve 0.7; profile 0.3
+test/revoke_auth_mongoDB_rate_hotel_res__r4,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,1,0.8758416215578715,1,1,1,1,1,0.3758416215578715,1,1,1,rate 0.1 restart; memcached-profile 0.4; memcached-reserve 0.4
+test/revoke_auth_mongoDB_rate_hotel_res__r5,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,1,1.0396599570910137,1,1,1,1,1,0.5396599570910136,1,1,1,rate 0.1 restart; memcached-profile 0.2; memcached-reserve 0.2
+test/user_unregistered_mongodb_geo_hotel_res__r1,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1,0.9441864728927613,1,1,1,1,1,0.9441864728927613,1,1,1,geo 22.3 restart; mongodb-geo 43.9; memcached-rate 1.5
+test/user_unregistered_mongodb_geo_hotel_res__r2,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1,0.9251488606135051,1,1,1,1,1,0.9251488606135051,1,1,1,geo 96.5 restart; mongodb-geo 67.0; rate 0.7
+test/user_unregistered_mongodb_geo_hotel_res__r3,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1,1.153008719285329,1,1,1,1,1,0.6530087192853292,1,1,1,geo 0.1 restart; memcached-rate 0.6; mongodb-geo 0.5
+test/user_unregistered_mongodb_geo_hotel_res__r4,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1,0.8428482055664063,1,1,1,1,1,0.34284820556640627,1,1,1,geo 0.0 restart; memcached-profile 0.6; mongodb-recommendation 0.4
+test/user_unregistered_mongodb_geo_hotel_res__r5,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1,0.7494835019111633,1,1,1,1,1,0.7494835019111633,1,1,1,geo 0.0 restart; mongodb-geo 36.0; memcached-reserve 0.4
+test/user_unregistered_mongodb_rate_hotel_res__r1,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1,0.7619984984397888,1,1,1,1,1,0.7619984984397888,1,1,1,rate 59.0 restart; mongodb-rate 0.3; mongodb-reservation 0.3
+test/user_unregistered_mongodb_rate_hotel_res__r2,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1,0.7833930810292562,1,1,1,1,1,0.7833930810292562,1,1,1,rate 13.2 restart; memcached-reserve 0.4; memcached-rate 0.2
+test/user_unregistered_mongodb_rate_hotel_res__r3,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1,0.8225932876269023,1,1,1,1,1,0.8225932876269023,1,1,1,rate 43.6 restart; memcached-rate 0.5; mongodb-rate 0.4
+test/user_unregistered_mongodb_rate_hotel_res__r4,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1,0.9434716939926148,1,1,1,1,1,0.44347169399261477,1,1,1,rate 0.1 restart; memcached-reserve 0.2; mongodb-recommendation 0.1
+test/user_unregistered_mongodb_rate_hotel_res__r5,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1,0.9788680116335551,1,1,1,1,1,0.4788680116335551,1,1,1,rate 0.6 restart; memcached-reserve 0.4; reservation 0.3
+test/wrong_bin_usage_hotel_res__r1,test,wrong_bin_usage,profile,1,1,1.0018113613128663,0,0,0,1,1,1.0018113613128663,0,0,0,mongodb-geo 657.2; profile 3.5; memcached-profile 1.2
+test/wrong_bin_usage_hotel_res__r2,test,wrong_bin_usage,profile,1,1,0.8780018607775371,0,0,0,1,1,0.8780018607775371,0,0,0,mongodb-geo 662.7; profile 3.2; mongodb-profile 1.1
+test/wrong_bin_usage_hotel_res__r3,test,wrong_bin_usage,profile,1,1,0.5434584697087605,0,0,0,1,1,0.5434584697087605,0,0,0,mongodb-geo 168.6; mongodb-profile 0.7; memcached-reserve 0.3
+test/wrong_bin_usage_hotel_res__r4,test,wrong_bin_usage,profile,1,1,0.6149924675623576,0,0,0,1,1,0.6149924675623576,0,0,0,mongodb-geo 527.1; profile 2.1; mongodb-profile 0.5
+test/wrong_bin_usage_hotel_res__r5,test,wrong_bin_usage,profile,1,1,0.7520602941513062,0,0,0,1,1,0.7520602941513062,0,0,0,mongodb-geo 301.2; profile 2.8; mongodb-profile 2.7
