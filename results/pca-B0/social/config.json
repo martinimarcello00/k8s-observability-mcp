@@ -1,12 +1,11 @@
 {
  "app": "social",
- "data": "/home/tecnico/datasets/full_v2-built",
- "written_utc": "2026-11-21T15:25:04+00:00",
- "code": {
-  "commit": "e57872797098d28efa94619a0d6fda6ea606b91f",
-  "uncommitted_changes": false
+ "model": "pca",
+ "params": {
+  "VAR": 0.95,
+  "MIN_FINITE": 0.95,
+  "MIN_SD": 1e-06
  },
- "model": "PCA per service, SPE persistent over 2 steps",
  "features": [
   "cpu_user",
   "cpu_system",
@@ -19,12 +18,21 @@
   "rx_packets",
   "tx_packets"
  ],
- "rule": "restarts > 0 -> alarm on that service",
- "VAR": 0.95,
- "MIN_FINITE": 0.95,
- "MIN_SD": 1e-06,
- "threshold": "per service, max persistent SPE over train + val (loaded steps)",
- "window_s": 900,
+ "data": "/home/tecnico/datasets/full_v2-built",
+ "written_utc": "2026-11-22T11:20:14+00:00",
+ "code": {
+  "commit": "55496db9c0fd2f261bbc6704a7c66ea584bb27c0",
+  "uncommitted_changes": false
+ },
+ "protocol": {
+  "inference": "one per 30 s step; the system is in alarm when any service is",
+  "score": "the model's score, persistent over 2 steps (min of t and t-1)",
+  "threshold": "per service, max score over the loaded steps of train + val",
+  "restart rule": "model+restart: a service that restarts is in alarm and ranks first",
+  "ground truth": "fault runs are faulty from the injection to their end; healthy: loaded steps of noop runs, clean test and test-unseen sessions, fault runs before the injection",
+  "found": "an alarm of some service starts after the injection",
+  "localization": "services ranked at the first alarm (restarted first, then score / threshold); top@k hits when an accepted target is in the first k; a fault not found is a miss"
+ },
  "runs": {
   "fault-dev": [
    "dev/net_delay_home_timeline_social_network__r1",
