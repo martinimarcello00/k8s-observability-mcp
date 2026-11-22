@@ -44,7 +44,7 @@ class PCA:
             _, sv, Vt = np.linalg.svd(B - mean, full_matrices=False)
             kept = np.cumsum(sv**2) / np.sum(sv**2)
             k = min(int(np.searchsorted(kept, VAR)) + 1, len(sv))
-            self.services.append(SimpleNamespace(cols=cols, mean=mean, V=Vt[:k].T, variance=float(kept[k - 1])))
+            self.services.append(SimpleNamespace(cols=cols, mean=mean, V=Vt[:k].T, variance=float(kept[k - 1]), cumulative=kept))
         return self
 
     def _z(self, X):

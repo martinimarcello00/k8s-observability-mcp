@@ -200,7 +200,9 @@ def git_state():
     return {"commit": head, "uncommitted_changes": bool(dirty)}
 
 
-def evaluate(name, app, data, out):
+def compute(name, app, data):
+    """Everything evaluate writes, kept in memory: the runs (with scores, rules and alarms), the model, the thresholds
+    and the tables. The notebooks draw from it, so their figures follow the same protocol."""
     runs, model = load(app, data), MODELS[name]()
     cols, R = [inputs.B0.index(f) for f in model.features], inputs.B0.index("restarts")
     by = lambda *roles: [r for r in runs if r.role in roles]
@@ -228,7 +230,14 @@ def evaluate(name, app, data, out):
     for i, s in enumerate(runs[0].services):
         if card[s]:
             card[s]["threshold"] = float(thr[i])
+    return SimpleNamespace(runs=runs, model=model, thr=thr, faults=faults, summary=summary, scenarios=scen,
+                           alarms=alarms, card=card)
 
+
+def evaluate(name, app, data, out):
+    res = compute(name, app, data)
+    runs, model = res.runs, res.model
+    by = lambda *roles: [r for r in runs if r.role in roles]
     d = Path(out, f"{name}-B0", app)
     d.mkdir(parents=True, exist_ok=True)
     config = {"app": app, "model": name, "params": model.params, "features": model.features, "data": str(data),
@@ -249,12 +258,12 @@ def evaluate(name, app, data, out):
                                   "hits when an accepted target is in the first k; a fault not found is a miss"},
               "runs": {role: [r.id for r in by(role)] for role in sorted({r.role for r in runs})}}
     (d / "config.json").write_text(json.dumps(config, indent=1))
-    (d / "model.json").write_text(json.dumps(card, indent=1))
-    summary.to_csv(d / "summary.csv")
-    scen.to_csv(d / "scenarios.csv")
-    faults.to_csv(d / "faults.csv", index=False)
-    alarms.to_csv(d / "alarms.csv", index=False)
-    return summary, scen, d
+    (d / "model.json").write_text(json.dumps(res.card, indent=1))
+    res.summary.to_csv(d / "summary.csv")
+    res.scenarios.to_csv(d / "scenarios.csv")
+    res.faults.to_csv(d / "faults.csv", index=False)
+    res.alarms.to_csv(d / "alarms.csv", index=False)
+    return res.summary, res.scenarios, d
 
 
 if __name__ == "__main__":
