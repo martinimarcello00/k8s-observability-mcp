@@ -2,11 +2,10 @@
 import numpy as np
 
 from anomaly import build, inputs
-from anomaly.models import pca
-from anomaly.models.evaluate import episodes, rank
+from anomaly.models import evaluate as ev, pca
 
 rng = np.random.default_rng(0)
-F = len(pca.FEATURES)
+F = len(pca.PCA.features)
 
 # --- prepare: values in UNITS through log1p, memory as its change per step (NaN at the first step); to_units inverts it
 names = [f[0] for f in build.FEATURES]
@@ -23,9 +22,10 @@ assert np.allclose(inputs.to_units(o[:, 0, cu], "cpu_user"), 2)  # mC
 T = 2000
 X = (rng.normal(size=(T, 2)) @ rng.normal(size=(2, F)) + 0.01 * rng.normal(size=(T, F)))[:, None, :]
 X[:, :, F - 1] = 0.5
-m = pca.PCA().fit([X]).calibrate([(X, np.ones(T, bool))])
+m = pca.PCA().fit([X])
 s = m.services[0]
 assert s.V.shape[1] == 2 and not s.cols[F - 1]  # two directions kept, the flat column left out
+assert m.card(["svc"])["svc"]["left_out"] == [m.features[F - 1]]
 
 # --- a healthy step scores about 0 and is reconstructed; a step off the subspace scores on the feature that moved
 y = X[:6].copy()
@@ -34,13 +34,19 @@ r2, expected = m.score(y)
 assert r2[0, 0].sum() < 0.01 and np.allclose(expected[0, 0, :F - 1], y[0, 0, :F - 1], atol=0.05)
 assert np.isnan(expected[0, 0, F - 1])
 assert np.argmax(r2[3, 0]) == 4 and r2[3, 0].sum() > 50
-assert pca.explain(y, r2, expected, 3, 0)[0][0] == pca.FEATURES[4]
+assert ev.explain(m.features, y, r2, expected, 3, 0)[0][0] == m.features[4]
 
-# --- persistence: the first step off the subspace alone does not alarm, the second one does
-e = m.spe(y)[:, 0]
-assert e[3] < m.thr[0] < e[4]
+# --- persistence: the first step off the subspace alone does not pass the healthy maximum, the second one does
+thr = ev.persist(m.score(X)[0].sum(2)).max(0)[0]
+e = ev.persist(r2.sum(2))[:, 0]
+assert e[3] < thr < e[4]
 
-# --- ranking: a restarted service first, then by score; episodes of consecutive alarms
-assert list(rank(np.array([0.5, 3.0, 2.0]), np.array([False, False, True]))) == [2, 1, 0]
-assert episodes(np.array([0, 1, 1, 0, 1], bool)) == [(1, 3), (4, 5)]
+# --- protocol helpers: alarm starts, episodes, ranking (restarted first, then score), confusion matrix, F-beta
+assert list(ev.starts(np.array([0, 1, 1, 0, 1], bool))) == [False, True, False, False, True]
+assert ev.episodes(np.array([0, 1, 1, 0, 1], bool)) == [(1, 3), (4, 5)]
+assert list(ev.rank(np.array([0.5, 3.0, 2.0]), np.array([False, False, True]))) == [2, 1, 0]
+alarm, fault = np.array([1, 1, 0, 0, 1], bool), np.array([0, 0, 1, 1, 1], bool)
+assert ev.counts(alarm, fault, ~fault) == (1, 2, 2, 0)
+assert np.isclose(ev.fbeta(0.5, 1.0, 2), 5 / 6) and np.isclose(ev.fbeta(1.0, 0.5, 0.5), 5 / 6)
+assert np.isclose(ev.fbeta(0.5, 1.0, 1), 2 / 3) and ev.fbeta(0, 0, 1) == 0
 print("ok")
