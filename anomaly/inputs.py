@@ -70,14 +70,14 @@ UNITS = {"cpu": (1e3, "mC"), "cpu_user": (1e3, "mC"), "cpu_system": (1e3, "mC"),
          "tx_packets": (1, "pkt/s"), "restarts": (300, "per 5 min")}
 
 
-def prepare(x, features, keep=B0):
+def prepare(x, features, keep=B0, exists=None):
     """Model input of one run, [T, S, len(keep)] from the raw x [T, S, F] of the builder; causal like fill_misses.
 
-    Values are filled (fill_misses), clipped at 0, read in UNITS and passed through log1p. Memory is the signed log1p of
-    its change since the previous step instead: the level of a store's memory is the integral of its past load, its
-    change is not. The first step has no change, so its memory is NaN.
+    Values are filled (fill_misses, with `exists` as there: online, the training's), clipped at 0, read in UNITS and
+    passed through log1p. Memory is the signed log1p of its change since the previous step instead: the level of a
+    store's memory is the integral of its past load, its change is not. The first step has no change, so its memory is NaN.
     """
-    v = np.clip(fill_misses(x, features)[0], 0, None)
+    v = np.clip(fill_misses(x, features, exists)[0], 0, None)
     out = []
     for f in keep:
         a = v[:, :, features.index(f)] * UNITS[f][0]

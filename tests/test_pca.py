@@ -47,6 +47,22 @@ assert ev.episodes(np.array([0, 1, 1, 0, 1], bool)) == [(1, 3), (4, 5)]
 assert list(ev.rank(np.array([0.5, 3.0, 2.0]), np.array([False, False, True]))) == [2, 1, 0]
 alarm, fault = np.array([1, 1, 0, 0, 1], bool), np.array([0, 0, 1, 1, 1], bool)
 assert ev.counts(alarm, fault, ~fault) == (1, 2, 2, 0)
+assert np.isnan(ev.precision_recall(3, 1, 0, 0)[0])  # no healthy inference: precision undefined, not 1
+assert ev.precision_recall(3, 1, 1, 5) == (0.75, 0.75)
+
+# --- absence rule: a container group gone for 3 steps is absent from its 2nd step (the 1st is filled as a miss);
+#     a one-step miss is not absence
+x = np.ones((8, 2, len(names)))
+x[:, :, names.index("restarts")] = 0
+exists = ~np.isnan(x).all(0)
+C = [j for j, f in enumerate(build.FEATURES) if f[3] == "container"]
+y = x.copy()
+y[3:6, 0, C] = np.nan
+a = ev.absent(y, names, exists)
+assert list(a[:, 0]) == [False, False, False, False, True, True, False, False] and not a[:, 1].any()
+y = x.copy()
+y[3, 0, C] = np.nan
+assert not ev.absent(y, names, exists).any()
 assert np.isclose(ev.fbeta(0.5, 1.0, 2), 5 / 6) and np.isclose(ev.fbeta(1.0, 0.5, 0.5), 5 / 6)
 assert np.isclose(ev.fbeta(0.5, 1.0, 1), 2 / 3) and ev.fbeta(0, 0, 1) == 0
 print("ok")
