@@ -18,7 +18,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-from anomaly.build import last_valid_attempt
+from anomaly.build import DATASET, last_valid_attempt
 
 VIEWER, IMAGE = "jaeger-viewer", "jaegertracing/all-in-one:1.57"  # the collected runs' Jaeger version
 UI, OTLP, LIVE = 16690, 14318, 16687  # never 16686: the collector port-forwards its Jaeger there at readiness and export
@@ -232,7 +232,7 @@ def main(argv=None):
     q.add_argument("--from", dest="start", type=float, default=-60, help="seconds from the injection (default -60)")
     q.add_argument("--to", dest="end", type=float, default=120, help="seconds from the injection (default 120)")
     q.add_argument("--add", action="store_true", help="keep the traces already loaded, e.g. a clean run next to a faulty one")
-    q.add_argument("--root", default="~/datasets/full", help="where the runs are (default ~/datasets/full)")
+    q.add_argument("--root", default=DATASET / "raw", help=f"where the runs are (default {DATASET / 'raw'})")
     q.set_defaults(func=pick)
     sub.add_parser("live", help="link to the Jaeger of the run being collected").set_defaults(func=live)
     sub.add_parser("down", help="stop the local Jaeger and the live link").set_defaults(func=down)

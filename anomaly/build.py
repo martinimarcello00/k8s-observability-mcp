@@ -26,6 +26,9 @@ from pathlib import Path
 
 import numpy as np
 
+# The dataset, a local copy of the HF repo Keeevin16/AIOpsLab-app-collection-Hotel-Social: raw/ holds the collector's
+# runs (RAW_APP_DIR is raw/<app>), built/ this module's output (OUT_DIR is built/<app>), README.md describes both
+DATASET = Path.home() / "datasets" / "AIOpsLab-app-collection-Hotel-Social"
 DATAGRAPH = {"Hotel Reservation": "hotel-reservation-datagraph.txt", "Social Network": "social-network-datagraph.txt"}
 # name, cAdvisor metric, counter (per-second rate) or gauge, summed over app containers or read on the pod's own series (network)
 FEATURES = [

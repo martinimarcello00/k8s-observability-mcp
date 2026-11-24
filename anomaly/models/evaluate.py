@@ -1,6 +1,6 @@
 """Evaluate a model on one app of the built dataset with the protocol below, and write down what it did.
 
-    PYTHONPATH=. python -m anomaly.models.evaluate pca hotel [--data ~/datasets/full_v2-built] [--out results]
+    PYTHONPATH=. python -m anomaly.models.evaluate pca hotel [--data <build.DATASET>/built] [--out results]
 
 The protocol is the same for every model: only fitting and scoring belong to the model. A model in MODELS provides
 - features: the B0 features it reads (names, a subset of inputs.B0);
@@ -51,7 +51,7 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 
-from anomaly import inputs
+from anomaly import build, inputs
 from anomaly.models import pca
 
 MODELS = {"pca": pca.PCA}
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("model", choices=MODELS)
     ap.add_argument("app", choices=("hotel", "social"))
-    ap.add_argument("--data", default=Path.home() / "datasets/full_v2-built")
+    ap.add_argument("--data", default=build.DATASET / "built")
     ap.add_argument("--out", default=REPO / "results")
     a = ap.parse_args()
     summary, scen, d = evaluate(a.model, a.app, a.data, a.out)
