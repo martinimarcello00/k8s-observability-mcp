@@ -18,25 +18,42 @@
   "rx_packets",
   "tx_packets"
  ],
- "data": "/home/tecnico/datasets/full_v2-built",
- "written_utc": "2026-11-22T11:20:14+00:00",
+ "data": "/home/tecnico/datasets/AIOpsLab-app-collection-Hotel-Social/built",
+ "written_utc": "2026-11-24T10:51:19+00:00",
  "code": {
-  "commit": "55496db9c0fd2f261bbc6704a7c66ea584bb27c0",
+  "commit": "854056d83c795400f3102858e73b17e6045d4ff6",
   "uncommitted_changes": false
  },
  "protocol": {
+  "folds": "dev = dev faults, only to tune choices; test = test faults, noop runs, clean test and test-unseen sessions, only to report",
+  "warm-up": "the first 300 s after the load starts are left out of fitting, threshold and evaluation",
   "inference": "one per 30 s step; the system is in alarm when any service is",
   "score": "the model's score, persistent over 2 steps (min of t and t-1)",
-  "threshold": "per service, max score over the loaded steps of train + val",
-  "restart rule": "model+restart: a service that restarts is in alarm and ranks first",
-  "ground truth": "fault runs are faulty from the injection to their end; healthy: loaded steps of noop runs, clean test and test-unseen sessions, fault runs before the injection",
+  "threshold": "per service, max score over the loaded steps of train + val after the warm-up",
+  "rules": "restart: a service that restarts; absence: a sample group present in training is missing after fill_misses; a service meeting a rule is in alarm and ranks first",
+  "ground truth": "fault runs are faulty from the injection to their end; healthy: loaded steps after the warm-up of noop runs and clean test and test-unseen sessions",
   "found": "an alarm of some service starts after the injection",
-  "localization": "services ranked at the first alarm (restarted first, then score / threshold); top@k hits when an accepted target is in the first k; a fault not found is a miss"
+  "localization": "services ranked at the first alarm (rules first, then score / threshold); top@k hits when an accepted target is in the first k; a fault not found is a miss"
  },
  "runs": {
   "fault-dev": [
+   "dev/io_latency_mongodb_profile_hotel_res__r1",
+   "dev/io_latency_mongodb_profile_hotel_res__r2",
+   "dev/io_latency_mongodb_profile_hotel_res__r3",
+   "dev/mem_stress_reservation_hotel_res__r1",
+   "dev/mem_stress_reservation_hotel_res__r2",
+   "dev/mem_stress_reservation_hotel_res__r3",
+   "dev/net_bandwidth_mongodb_reservation_hotel_res__r1",
+   "dev/net_bandwidth_mongodb_reservation_hotel_res__r2",
+   "dev/net_bandwidth_mongodb_reservation_hotel_res__r3",
+   "dev/net_corrupt_recommendation_hotel_res__r1",
+   "dev/net_corrupt_recommendation_hotel_res__r2",
+   "dev/net_corrupt_recommendation_hotel_res__r3",
    "dev/net_delay_search_hotel_res__r1",
    "dev/net_delay_search_hotel_res__r2",
+   "dev/pod_kill_frontend_hotel_res__r1",
+   "dev/pod_kill_frontend_hotel_res__r2",
+   "dev/pod_kill_frontend_hotel_res__r3",
    "dev/stress_cpu_search_20_hotel_res__r1",
    "dev/stress_cpu_search_20_hotel_res__r2",
    "dev/stress_cpu_search_5_hotel_res__r1",
@@ -98,10 +115,22 @@
   ],
   "noop": [
    "test/noop_hotel_res__r1",
+   "test/noop_hotel_res__r10",
+   "test/noop_hotel_res__r11",
+   "test/noop_hotel_res__r12",
+   "test/noop_hotel_res__r13",
+   "test/noop_hotel_res__r14",
+   "test/noop_hotel_res__r15",
+   "test/noop_hotel_res__r16",
+   "test/noop_hotel_res__r17",
    "test/noop_hotel_res__r2",
    "test/noop_hotel_res__r3",
    "test/noop_hotel_res__r4",
-   "test/noop_hotel_res__r5"
+   "test/noop_hotel_res__r5",
+   "test/noop_hotel_res__r6",
+   "test/noop_hotel_res__r7",
+   "test/noop_hotel_res__r8",
+   "test/noop_hotel_res__r9"
   ],
   "test": [
    "clean/noop_hotel_res__r10",

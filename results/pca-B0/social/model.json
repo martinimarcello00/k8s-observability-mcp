@@ -2,116 +2,116 @@
  "nginx-thrift": {
   "k": 3,
   "columns": 8,
-  "variance_kept": 0.9912,
+  "variance_kept": 0.9886,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 1.0329028448199582
+  "threshold": 1.3230559908627038
  },
  "compose-post-service": {
   "k": 3,
   "columns": 9,
-  "variance_kept": 0.9899,
+  "variance_kept": 0.9895,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 0.6916723384391101
+  "threshold": 0.7955371153391377
  },
  "user-service": {
-  "k": 3,
+  "k": 4,
   "columns": 9,
-  "variance_kept": 0.9776,
+  "variance_kept": 0.9886,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 3.9365527295367215
+  "threshold": 0.5468750395071377
  },
  "home-timeline-service": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9913,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 0.3557330226339148
+ },
+ "user-timeline-service": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9708,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 2.687403479681678
+ },
+ "text-service": {
+  "k": 3,
+  "columns": 9,
+  "variance_kept": 0.9662,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 1.9575151083242568
+ },
+ "media-service": {
+  "k": 3,
+  "columns": 9,
+  "variance_kept": 0.9519,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 7.7121471323269
+ },
+ "unique-id-service": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9878,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 0.6762829109979906
+ },
+ "post-storage-service": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9879,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 0.545689684206507
+ },
+ "social-graph-service": {
   "k": 4,
   "columns": 9,
   "variance_kept": 0.991,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 0.42344280424919345
- },
- "user-timeline-service": {
-  "k": 4,
-  "columns": 9,
-  "variance_kept": 0.9659,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 3.248908255298381
- },
- "text-service": {
-  "k": 3,
-  "columns": 9,
-  "variance_kept": 0.9669,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 1.6737995034967712
- },
- "media-service": {
-  "k": 3,
-  "columns": 9,
-  "variance_kept": 0.9546,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 8.904859219917384
- },
- "unique-id-service": {
-  "k": 3,
-  "columns": 9,
-  "variance_kept": 0.9524,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 4.366562488448413
- },
- "post-storage-service": {
-  "k": 4,
-  "columns": 9,
-  "variance_kept": 0.9877,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 0.4916172716147954
- },
- "social-graph-service": {
-  "k": 3,
-  "columns": 9,
-  "variance_kept": 0.9661,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 44.93363783580403
+  "threshold": 0.4472519379596231
  },
  "user-mention-service": {
   "k": 3,
   "columns": 9,
-  "variance_kept": 0.9606,
+  "variance_kept": 0.9604,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 2.78930379755217
+  "threshold": 2.851965237513602
  },
  "url-shorten-service": {
   "k": 3,
   "columns": 9,
-  "variance_kept": 0.9634,
+  "variance_kept": 0.9622,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 1.4150195870107183
+  "threshold": 1.3396464012419549
  },
  "media-frontend": {
   "k": 1,
   "columns": 2,
-  "variance_kept": 0.9959,
+  "variance_kept": 0.9952,
   "left_out": [
    "cpu_user",
    "cpu_system",
@@ -122,65 +122,65 @@
    "rx_bytes",
    "rx_packets"
   ],
-  "threshold": 0.3558961951718294
+  "threshold": 1.595990156552254e-05
  },
  "media-mongodb": {
   "k": 6,
   "columns": 7,
-  "variance_kept": 0.9992,
+  "variance_kept": 0.9991,
   "left_out": [
    "threads",
    "rx_bytes",
    "rx_packets"
   ],
-  "threshold": 0.0011057219032480472
+  "threshold": 6.960834995980007e-05
  },
  "post-storage-mongodb": {
   "k": 4,
   "columns": 10,
-  "variance_kept": 0.9766,
+  "variance_kept": 0.9763,
   "left_out": [],
-  "threshold": 1.300882478567598
+  "threshold": 1.3349847686711807
  },
  "social-graph-mongodb": {
-  "k": 5,
+  "k": 6,
   "columns": 10,
-  "variance_kept": 0.9742,
+  "variance_kept": 0.9646,
   "left_out": [],
-  "threshold": 2.5380605120770445
+  "threshold": 5.899683696357848
  },
  "url-shorten-mongodb": {
   "k": 3,
   "columns": 10,
-  "variance_kept": 0.9559,
+  "variance_kept": 0.954,
   "left_out": [],
-  "threshold": 16.578308391888907
+  "threshold": 17.19182818339098
  },
  "user-mongodb": {
-  "k": 6,
+  "k": 7,
   "columns": 10,
-  "variance_kept": 0.9711,
+  "variance_kept": 0.994,
   "left_out": [],
-  "threshold": 23.42955157657851
+  "threshold": 0.23490636987595592
  },
  "user-timeline-mongodb": {
   "k": 4,
   "columns": 10,
-  "variance_kept": 0.9633,
+  "variance_kept": 0.9664,
   "left_out": [],
-  "threshold": 12.160797201011288
+  "threshold": 9.21609644911161
  },
  "home-timeline-redis": {
   "k": 4,
   "columns": 10,
-  "variance_kept": 0.985,
+  "variance_kept": 0.9854,
   "left_out": [],
-  "threshold": 2.614027292197196
+  "threshold": 2.563037840858358
  },
  "media-memcached": {
   "k": 2,
   "columns": 4,
-  "variance_kept": 0.9653,
+  "variance_kept": 0.965,
   "left_out": [
    "mem_working_set",
    "mem_rss",
@@ -189,29 +189,31 @@
    "rx_bytes",
    "rx_packets"
   ],
-  "threshold": 2.005762314099271
+  "threshold": 1.9860294698540903
  },
  "post-storage-memcached": {
   "k": 2,
   "columns": 8,
-  "variance_kept": 0.9521,
+  "variance_kept": 0.9519,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 3.6509935853156756
+  "threshold": 3.6281083520818114
  },
  "social-graph-redis": {
-  "k": 5,
-  "columns": 10,
-  "variance_kept": 0.9816,
-  "left_out": [],
-  "threshold": 3.8892785682834
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.9789,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 0.9236645449195259
  },
  "url-shorten-memcached": {
   "k": 2,
   "columns": 4,
-  "variance_kept": 0.9659,
+  "variance_kept": 0.9666,
   "left_out": [
    "mem_working_set",
    "mem_rss",
@@ -220,23 +222,23 @@
    "rx_bytes",
    "rx_packets"
   ],
-  "threshold": 2.1666850623098055
+  "threshold": 2.138670998523148
  },
  "user-memcached": {
   "k": 3,
   "columns": 8,
-  "variance_kept": 0.992,
+  "variance_kept": 0.9915,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 0.4291223346399809
+  "threshold": 0.460291448849737
  },
  "user-timeline-redis": {
   "k": 5,
   "columns": 10,
-  "variance_kept": 0.9687,
+  "variance_kept": 0.968,
   "left_out": [],
-  "threshold": 1.7591606619635753
+  "threshold": 1.7377959544953236
  }
 }

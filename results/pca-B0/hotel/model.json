@@ -2,145 +2,151 @@
  "frontend": {
   "k": 4,
   "columns": 9,
-  "variance_kept": 0.996,
+  "variance_kept": 0.9962,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 1.5953846644812835
+  "threshold": 0.22770081901619402
  },
  "user": {
   "k": 3,
   "columns": 9,
-  "variance_kept": 0.961,
+  "variance_kept": 0.9607,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 4.417001943912431
+  "threshold": 4.51713569172152
  },
  "recommendation": {
   "k": 3,
   "columns": 9,
-  "variance_kept": 0.9536,
+  "variance_kept": 0.9513,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 6.1822032519030685
+  "threshold": 5.568699215841175
  },
  "profile": {
   "k": 4,
   "columns": 9,
-  "variance_kept": 0.9925,
+  "variance_kept": 0.9926,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 0.3258568629831574
+  "threshold": 0.3035172544187112
  },
  "search": {
   "k": 4,
   "columns": 9,
-  "variance_kept": 0.9968,
+  "variance_kept": 0.9969,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 0.44952107004518055
+  "threshold": 0.4709822802988233
  },
  "reservation": {
   "k": 4,
   "columns": 9,
-  "variance_kept": 0.9739,
+  "variance_kept": 0.9735,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 1.6054342757192983
+  "threshold": 1.6733769872242998
  },
  "geo": {
+  "k": 4,
+  "columns": 9,
+  "variance_kept": 0.995,
+  "left_out": [
+   "mem_cache"
+  ],
+  "threshold": 0.36670321152311464
+ },
+ "rate": {
   "k": 4,
   "columns": 9,
   "variance_kept": 0.9947,
   "left_out": [
    "mem_cache"
   ],
-  "threshold": 0.45849799820451154
- },
- "rate": {
-  "k": 4,
-  "columns": 9,
-  "variance_kept": 0.9946,
-  "left_out": [
-   "mem_cache"
-  ],
-  "threshold": 0.6037174322388342
+  "threshold": 0.5981782439912944
  },
  "mongodb-geo": {
   "k": 6,
-  "columns": 10,
-  "variance_kept": 0.9598,
-  "left_out": [],
-  "threshold": 2.0575487693801295
+  "columns": 9,
+  "variance_kept": 0.9592,
+  "left_out": [
+   "threads"
+  ],
+  "threshold": 2.134996432222646
  },
  "mongodb-profile": {
-  "k": 6,
+  "k": 7,
   "columns": 10,
-  "variance_kept": 0.9573,
+  "variance_kept": 0.9727,
   "left_out": [],
-  "threshold": 2.703478022516472
+  "threshold": 2.703869276317833
  },
  "mongodb-rate": {
   "k": 7,
   "columns": 10,
-  "variance_kept": 0.9843,
+  "variance_kept": 0.9699,
   "left_out": [],
-  "threshold": 1.9010012015632527
+  "threshold": 1.4149386852330808
  },
  "mongodb-recommendation": {
   "k": 6,
-  "columns": 10,
-  "variance_kept": 0.9618,
-  "left_out": [],
-  "threshold": 3.3323324011586495
+  "columns": 9,
+  "variance_kept": 0.9632,
+  "left_out": [
+   "threads"
+  ],
+  "threshold": 3.272919235597966
  },
  "mongodb-reservation": {
   "k": 5,
   "columns": 10,
-  "variance_kept": 0.9631,
+  "variance_kept": 0.9647,
   "left_out": [],
-  "threshold": 3.252103981623497
+  "threshold": 3.1586915167868663
  },
  "mongodb-user": {
   "k": 6,
-  "columns": 10,
-  "variance_kept": 0.9819,
-  "left_out": [],
-  "threshold": 0.7682941074203236
+  "columns": 9,
+  "variance_kept": 0.9596,
+  "left_out": [
+   "threads"
+  ],
+  "threshold": 1.7284284247425672
  },
  "memcached-profile": {
   "k": 3,
   "columns": 8,
-  "variance_kept": 0.979,
+  "variance_kept": 0.98,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 0.9744079418019688
+  "threshold": 0.969964714527038
  },
  "memcached-rate": {
   "k": 3,
   "columns": 8,
-  "variance_kept": 0.9843,
+  "variance_kept": 0.9844,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 1.0794227771416929
+  "threshold": 1.0769557537529932
  },
  "memcached-reserve": {
   "k": 3,
   "columns": 8,
-  "variance_kept": 0.9726,
+  "variance_kept": 0.9753,
   "left_out": [
    "mem_cache",
    "threads"
   ],
-  "threshold": 1.277259008436103
+  "threshold": 1.3212727547720973
  }
 }
