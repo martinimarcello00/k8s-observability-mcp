@@ -1,0 +1,526 @@
+{
+ "frontend": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.491,
+   -3.775,
+   2.052,
+   0.587
+  ],
+  "sigma": {
+   "cpu_user": 0.112,
+   "cpu_system": 0.1001,
+   "mem_working_set": 0.3985,
+   "mem_rss": 0.2201,
+   "threads": 0.1,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.109,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 25.733041763305664
+ },
+ "user": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.933,
+   0.692,
+   1.254,
+   -2.148
+  ],
+  "sigma": {
+   "cpu_user": 0.1169,
+   "cpu_system": 0.1003,
+   "mem_working_set": 0.1664,
+   "mem_rss": 0.1512,
+   "threads": 0.1068,
+   "rx_bytes": 0.1001,
+   "tx_bytes": 0.1001,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.037,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 27.54650115966797
+ },
+ "recommendation": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.776,
+   -1.577,
+   1.106,
+   0.383
+  ],
+  "sigma": {
+   "cpu_user": 0.151,
+   "cpu_system": 0.1001,
+   "mem_working_set": 0.2548,
+   "mem_rss": 0.2132,
+   "threads": 0.1139,
+   "rx_bytes": 0.1048,
+   "tx_bytes": 0.1015,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.204,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 27.898765563964844
+ },
+ "profile": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   2.812,
+   -0.179,
+   2.485,
+   1.253
+  ],
+  "sigma": {
+   "cpu_user": 0.1592,
+   "cpu_system": 0.1001,
+   "mem_working_set": 0.2902,
+   "mem_rss": 0.1969,
+   "threads": 0.1046,
+   "rx_bytes": 0.1397,
+   "tx_bytes": 0.1034,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.952,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 27.954608917236328
+ },
+ "search": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.136,
+   -3.364,
+   1.9,
+   0.758
+  ],
+  "sigma": {
+   "cpu_user": 0.1136,
+   "cpu_system": 0.1,
+   "mem_working_set": 0.3143,
+   "mem_rss": 0.219,
+   "threads": 0.1001,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.094,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 28.657392501831055
+ },
+ "reservation": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.057,
+   -2.004,
+   1.136,
+   2.193
+  ],
+  "sigma": {
+   "cpu_user": 0.1591,
+   "cpu_system": 0.1003,
+   "mem_working_set": 0.3333,
+   "mem_rss": 0.278,
+   "threads": 0.1142,
+   "rx_bytes": 0.6174,
+   "tx_bytes": 0.1118,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.886,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 56.5202751159668
+ },
+ "geo": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   2.165,
+   -1.508,
+   0.811,
+   0.237
+  ],
+  "sigma": {
+   "cpu_user": 0.1476,
+   "cpu_system": 0.1001,
+   "mem_working_set": 0.2671,
+   "mem_rss": 0.2072,
+   "threads": 0.1098,
+   "rx_bytes": 0.1047,
+   "tx_bytes": 0.1014,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.991,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 19.987825393676758
+ },
+ "rate": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   3.296,
+   0.038,
+   2.09,
+   0.27
+  ],
+  "sigma": {
+   "cpu_user": 0.1398,
+   "cpu_system": 0.1,
+   "mem_working_set": 0.2698,
+   "mem_rss": 0.1891,
+   "threads": 0.1096,
+   "rx_bytes": 0.1075,
+   "tx_bytes": 0.1015,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.03,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 34.511138916015625
+ },
+ "mongodb-geo": {
+  "type": "mongodb",
+  "columns": 9,
+  "left_out": [
+   "threads"
+  ],
+  "condition": [
+   -2.221,
+   2.921,
+   1.288,
+   -0.625
+  ],
+  "sigma": {
+   "cpu_user": 0.1121,
+   "cpu_system": 0.197,
+   "mem_working_set": 0.1148,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "rx_bytes": 0.1006,
+   "tx_bytes": 0.1019,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   1.265,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 85.88923645019531
+ },
+ "mongodb-profile": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.09,
+   2.662,
+   1.507,
+   -0.744
+  ],
+  "sigma": {
+   "cpu_user": 0.114,
+   "cpu_system": 0.1953,
+   "mem_working_set": 0.1177,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "threads": 0.1,
+   "rx_bytes": 0.1007,
+   "tx_bytes": 0.1019,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   1.219,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 148.6630096435547
+ },
+ "mongodb-rate": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.065,
+   2.655,
+   1.512,
+   -0.718
+  ],
+  "sigma": {
+   "cpu_user": 0.1145,
+   "cpu_system": 0.1949,
+   "mem_working_set": 0.1179,
+   "mem_rss": 0.1001,
+   "mem_cache": 0.1,
+   "threads": 0.1,
+   "rx_bytes": 0.1007,
+   "tx_bytes": 0.102,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   1.209,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 58.18598175048828
+ },
+ "mongodb-recommendation": {
+  "type": "mongodb",
+  "columns": 9,
+  "left_out": [
+   "threads"
+  ],
+  "condition": [
+   -1.059,
+   3.346,
+   0.526,
+   -1.965
+  ],
+  "sigma": {
+   "cpu_user": 0.1099,
+   "cpu_system": 0.2039,
+   "mem_working_set": 0.1169,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "rx_bytes": 0.1001,
+   "tx_bytes": 0.1003,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   1.374,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 155.41184997558594
+ },
+ "mongodb-reservation": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -0.84,
+   0.287,
+   2.404,
+   -0.063
+  ],
+  "sigma": {
+   "cpu_user": 0.2636,
+   "cpu_system": 0.1636,
+   "mem_working_set": 0.1753,
+   "mem_rss": 0.1559,
+   "mem_cache": 0.1,
+   "threads": 0.1001,
+   "rx_bytes": 0.1458,
+   "tx_bytes": 1.0834,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.898,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 110.70243072509766
+ },
+ "mongodb-user": {
+  "type": "mongodb",
+  "columns": 9,
+  "left_out": [
+   "threads"
+  ],
+  "condition": [
+   -2.218,
+   2.924,
+   1.277,
+   -0.636
+  ],
+  "sigma": {
+   "cpu_user": 0.1122,
+   "cpu_system": 0.1978,
+   "mem_working_set": 0.1149,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "rx_bytes": 0.1006,
+   "tx_bytes": 0.1019,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   1.226,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 64.33271789550781
+ },
+ "memcached-profile": {
+  "type": "memcached",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   0.244,
+   1.508,
+   1.043,
+   3.743
+  ],
+  "sigma": {
+   "cpu_user": 0.1484,
+   "cpu_system": 0.1003,
+   "mem_working_set": 0.102,
+   "mem_rss": 0.1,
+   "rx_bytes": 0.1004,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.933,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 17.093036651611328
+ },
+ "memcached-rate": {
+  "type": "memcached",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   -2.399,
+   0.053,
+   -0.332,
+   3.194
+  ],
+  "sigma": {
+   "cpu_user": 0.1436,
+   "cpu_system": 0.1063,
+   "mem_working_set": 0.1007,
+   "mem_rss": 0.1,
+   "rx_bytes": 0.1004,
+   "tx_bytes": 0.1005,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.864,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 16.959470748901367
+ },
+ "memcached-reserve": {
+  "type": "memcached",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   -1.72,
+   -1.932,
+   -2.534,
+   0.906
+  ],
+  "sigma": {
+   "cpu_user": 0.1222,
+   "cpu_system": 0.1027,
+   "mem_working_set": 0.1004,
+   "mem_rss": 0.1,
+   "rx_bytes": 0.1021,
+   "tx_bytes": 0.1837,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.784,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "threshold": 22.874271392822266
+ }
+}

@@ -1,0 +1,801 @@
+{
+ "nginx-thrift": {
+  "type": "service",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   -2.276,
+   -0.181,
+   -1.643,
+   -1.531
+  ],
+  "sigma": {
+   "cpu_user": 0.2996,
+   "cpu_system": 0.1255,
+   "mem_working_set": 0.1786,
+   "mem_rss": 0.1486,
+   "rx_bytes": 0.4528,
+   "tx_bytes": 0.4249,
+   "rx_packets": 0.1009,
+   "tx_packets": 0.1002
+  },
+  "kl_per_dim": [
+   2.761,
+   0.0,
+   0.0,
+   0.846
+  ],
+  "threshold": 25.48598861694336
+ },
+ "compose-post-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.141,
+   2.598,
+   -3.189,
+   -4.295
+  ],
+  "sigma": {
+   "cpu_user": 0.1125,
+   "cpu_system": 0.1002,
+   "mem_working_set": 0.1793,
+   "mem_rss": 0.1,
+   "threads": 0.1001,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.258,
+   0.0,
+   0.0,
+   0.088
+  ],
+  "threshold": 26.62872886657715
+ },
+ "user-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.141,
+   1.027,
+   -0.935,
+   -3.476
+  ],
+  "sigma": {
+   "cpu_user": 0.1541,
+   "cpu_system": 0.1085,
+   "mem_working_set": 0.1024,
+   "mem_rss": 0.1,
+   "threads": 0.3263,
+   "rx_bytes": 0.1019,
+   "tx_bytes": 0.1019,
+   "rx_packets": 0.1008,
+   "tx_packets": 0.1005
+  },
+  "kl_per_dim": [
+   2.978,
+   0.0,
+   0.0,
+   0.019
+  ],
+  "threshold": 13.293126106262207
+ },
+ "home-timeline-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   -1.728,
+   4.003,
+   0.213,
+   -1.873
+  ],
+  "sigma": {
+   "cpu_user": 0.1683,
+   "cpu_system": 0.1086,
+   "mem_working_set": 0.1667,
+   "mem_rss": 0.1005,
+   "threads": 0.9309,
+   "rx_bytes": 0.5947,
+   "tx_bytes": 0.1247,
+   "rx_packets": 0.1008,
+   "tx_packets": 0.1004
+  },
+  "kl_per_dim": [
+   2.942,
+   0.0,
+   0.0,
+   0.084
+  ],
+  "threshold": 54.760494232177734
+ },
+ "user-timeline-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   -1.707,
+   1.591,
+   -1.97,
+   -1.336
+  ],
+  "sigma": {
+   "cpu_user": 0.1767,
+   "cpu_system": 0.1377,
+   "mem_working_set": 0.1581,
+   "mem_rss": 0.1007,
+   "threads": 0.777,
+   "rx_bytes": 0.5978,
+   "tx_bytes": 0.4386,
+   "rx_packets": 0.1027,
+   "tx_packets": 0.1034
+  },
+  "kl_per_dim": [
+   2.552,
+   0.0,
+   0.0,
+   0.158
+  ],
+  "threshold": 31.361703872680664
+ },
+ "text-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.27,
+   1.827,
+   -2.984,
+   -0.336
+  ],
+  "sigma": {
+   "cpu_user": 0.1338,
+   "cpu_system": 0.1008,
+   "mem_working_set": 0.1699,
+   "mem_rss": 0.1001,
+   "threads": 0.1056,
+   "rx_bytes": 0.1009,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.151,
+   0.0,
+   0.0,
+   0.047
+  ],
+  "threshold": 19.489418029785156
+ },
+ "media-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.383,
+   2.435,
+   -0.712,
+   -2.738
+  ],
+  "sigma": {
+   "cpu_user": 0.1457,
+   "cpu_system": 0.1002,
+   "mem_working_set": 0.1005,
+   "mem_rss": 0.1,
+   "threads": 0.1001,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.951,
+   0.0,
+   0.0,
+   0.014
+  ],
+  "threshold": 12.545313835144043
+ },
+ "unique-id-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.232,
+   2.614,
+   -0.474,
+   -2.901
+  ],
+  "sigma": {
+   "cpu_user": 0.1643,
+   "cpu_system": 0.1004,
+   "mem_working_set": 0.1005,
+   "mem_rss": 0.1,
+   "threads": 0.1,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.947,
+   0.0,
+   0.0,
+   0.009
+  ],
+  "threshold": 12.38940143585205
+ },
+ "post-storage-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   -2.195,
+   2.982,
+   -1.506,
+   -2.504
+  ],
+  "sigma": {
+   "cpu_user": 0.1595,
+   "cpu_system": 0.108,
+   "mem_working_set": 0.1804,
+   "mem_rss": 0.1007,
+   "threads": 0.1554,
+   "rx_bytes": 0.2301,
+   "tx_bytes": 0.1726,
+   "rx_packets": 0.1003,
+   "tx_packets": 0.1003
+  },
+  "kl_per_dim": [
+   2.879,
+   0.0,
+   0.0,
+   0.034
+  ],
+  "threshold": 21.74626922607422
+ },
+ "social-graph-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   -1.202,
+   2.526,
+   -1.934,
+   -3.609
+  ],
+  "sigma": {
+   "cpu_user": 0.1441,
+   "cpu_system": 0.1077,
+   "mem_working_set": 0.1099,
+   "mem_rss": 0.1001,
+   "threads": 0.1064,
+   "rx_bytes": 0.1012,
+   "tx_bytes": 0.1026,
+   "rx_packets": 0.1002,
+   "tx_packets": 0.1002
+  },
+  "kl_per_dim": [
+   3.208,
+   0.0,
+   0.0,
+   0.014
+  ],
+  "threshold": 11.442376136779785
+ },
+ "user-mention-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.034,
+   4.532,
+   -1.574,
+   -2.413
+  ],
+  "sigma": {
+   "cpu_user": 0.1524,
+   "cpu_system": 0.1026,
+   "mem_working_set": 0.1043,
+   "mem_rss": 0.1,
+   "threads": 0.1001,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.048,
+   0.0,
+   0.0,
+   0.012
+  ],
+  "threshold": 15.667459487915039
+ },
+ "url-shorten-service": {
+  "type": "service",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   0.779,
+   2.811,
+   -2.149,
+   -2.121
+  ],
+  "sigma": {
+   "cpu_user": 0.1376,
+   "cpu_system": 0.1004,
+   "mem_working_set": 0.1119,
+   "mem_rss": 0.1,
+   "threads": 0.1002,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.162,
+   0.0,
+   0.0,
+   0.023
+  ],
+  "threshold": 19.794689178466797
+ },
+ "media-frontend": {
+  "type": "service",
+  "columns": 2,
+  "left_out": [
+   "cpu_user",
+   "cpu_system",
+   "mem_working_set",
+   "mem_rss",
+   "mem_cache",
+   "threads",
+   "rx_bytes",
+   "rx_packets"
+  ],
+  "condition": [
+   1.212,
+   0.898,
+   2.39,
+   -1.194
+  ],
+  "sigma": {
+   "tx_bytes": 0.1417,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   0.9,
+   0.0,
+   0.0,
+   0.012
+  ],
+  "threshold": 0.07428286224603653
+ },
+ "media-mongodb": {
+  "type": "mongodb",
+  "columns": 7,
+  "left_out": [
+   "threads",
+   "rx_bytes",
+   "rx_packets"
+  ],
+  "condition": [
+   0.746,
+   -1.861,
+   2.764,
+   -1.679
+  ],
+  "sigma": {
+   "cpu_user": 0.1057,
+   "cpu_system": 0.1497,
+   "mem_working_set": 0.1,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "tx_bytes": 0.1772,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   0.536,
+   0.0,
+   0.0,
+   0.008
+  ],
+  "threshold": 18.532148361206055
+ },
+ "post-storage-mongodb": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.072,
+   0.756,
+   2.51,
+   1.907
+  ],
+  "sigma": {
+   "cpu_user": 0.2284,
+   "cpu_system": 0.1074,
+   "mem_working_set": 0.115,
+   "mem_rss": 0.1087,
+   "mem_cache": 0.4014,
+   "threads": 0.1005,
+   "rx_bytes": 0.1334,
+   "tx_bytes": 1.3567,
+   "rx_packets": 0.1145,
+   "tx_packets": 0.1006
+  },
+  "kl_per_dim": [
+   2.925,
+   0.0,
+   0.0,
+   0.928
+  ],
+  "threshold": 24.11861801147461
+ },
+ "social-graph-mongodb": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.193,
+   -1.183,
+   2.798,
+   -1.621
+  ],
+  "sigma": {
+   "cpu_user": 0.1169,
+   "cpu_system": 0.1473,
+   "mem_working_set": 0.1,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "threads": 0.149,
+   "rx_bytes": 0.1028,
+   "tx_bytes": 0.1203,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.313,
+   0.0,
+   0.0,
+   0.071
+  ],
+  "threshold": 59.991172790527344
+ },
+ "url-shorten-mongodb": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -2.246,
+   -0.658,
+   2.116,
+   2.553
+  ],
+  "sigma": {
+   "cpu_user": 0.3768,
+   "cpu_system": 0.1137,
+   "mem_working_set": 0.113,
+   "mem_rss": 0.1045,
+   "mem_cache": 0.3311,
+   "threads": 0.1,
+   "rx_bytes": 0.1011,
+   "tx_bytes": 0.1085,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.126,
+   0.0,
+   0.0,
+   0.968
+  ],
+  "threshold": 248.83773803710938
+ },
+ "user-mongodb": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.28,
+   0.469,
+   2.898,
+   -1.209
+  ],
+  "sigma": {
+   "cpu_user": 0.1185,
+   "cpu_system": 0.1569,
+   "mem_working_set": 0.1,
+   "mem_rss": 0.1,
+   "mem_cache": 0.1,
+   "threads": 0.2033,
+   "rx_bytes": 0.103,
+   "tx_bytes": 0.1179,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   2.566,
+   0.0,
+   0.0,
+   0.021
+  ],
+  "threshold": 64.046875
+ },
+ "user-timeline-mongodb": {
+  "type": "mongodb",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -2.831,
+   -1.205,
+   0.912,
+   -1.046
+  ],
+  "sigma": {
+   "cpu_user": 0.1843,
+   "cpu_system": 0.1014,
+   "mem_working_set": 0.1695,
+   "mem_rss": 0.1339,
+   "mem_cache": 0.5184,
+   "threads": 0.1001,
+   "rx_bytes": 0.1076,
+   "tx_bytes": 0.711,
+   "rx_packets": 0.1001,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.047,
+   0.0,
+   0.0,
+   0.773
+  ],
+  "threshold": 65.48117065429688
+ },
+ "home-timeline-redis": {
+  "type": "redis",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   -1.424,
+   -0.261,
+   -0.498,
+   2.215
+  ],
+  "sigma": {
+   "cpu_user": 0.6918,
+   "cpu_system": 0.3912,
+   "mem_working_set": 0.9162,
+   "mem_rss": 0.874,
+   "mem_cache": 1.4088,
+   "threads": 0.1002,
+   "rx_bytes": 0.1562,
+   "tx_bytes": 0.1003,
+   "rx_packets": 0.1002,
+   "tx_packets": 0.1001
+  },
+  "kl_per_dim": [
+   2.808,
+   0.0,
+   0.0,
+   1.633
+  ],
+  "threshold": 20.562891006469727
+ },
+ "media-memcached": {
+  "type": "memcached",
+  "columns": 4,
+  "left_out": [
+   "mem_working_set",
+   "mem_rss",
+   "mem_cache",
+   "threads",
+   "rx_bytes",
+   "rx_packets"
+  ],
+  "condition": [
+   1.92,
+   -0.299,
+   1.28,
+   -1.249
+  ],
+  "sigma": {
+   "cpu_user": 0.1009,
+   "cpu_system": 0.1025,
+   "tx_bytes": 0.1462,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   0.778,
+   0.0,
+   0.0,
+   0.008
+  ],
+  "threshold": 22.538915634155273
+ },
+ "post-storage-memcached": {
+  "type": "memcached",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   2.45,
+   1.301,
+   1.598,
+   -0.029
+  ],
+  "sigma": {
+   "cpu_user": 0.1602,
+   "cpu_system": 0.1153,
+   "mem_working_set": 0.1488,
+   "mem_rss": 0.1441,
+   "rx_bytes": 0.1409,
+   "tx_bytes": 0.2487,
+   "rx_packets": 0.1007,
+   "tx_packets": 0.1012
+  },
+  "kl_per_dim": [
+   3.951,
+   0.0,
+   0.0,
+   0.676
+  ],
+  "threshold": 71.17779541015625
+ },
+ "social-graph-redis": {
+  "type": "redis",
+  "columns": 9,
+  "left_out": [
+   "mem_cache"
+  ],
+  "condition": [
+   1.472,
+   0.962,
+   -0.655,
+   -0.301
+  ],
+  "sigma": {
+   "cpu_user": 0.2115,
+   "cpu_system": 0.1064,
+   "mem_working_set": 0.1046,
+   "mem_rss": 0.1002,
+   "threads": 0.2175,
+   "rx_bytes": 0.1032,
+   "tx_bytes": 0.1011,
+   "rx_packets": 0.1002,
+   "tx_packets": 0.1005
+  },
+  "kl_per_dim": [
+   2.967,
+   0.0,
+   0.0,
+   0.051
+  ],
+  "threshold": 15.843786239624023
+ },
+ "url-shorten-memcached": {
+  "type": "memcached",
+  "columns": 4,
+  "left_out": [
+   "mem_working_set",
+   "mem_rss",
+   "mem_cache",
+   "threads",
+   "rx_bytes",
+   "rx_packets"
+  ],
+  "condition": [
+   1.405,
+   -1.198,
+   0.784,
+   -2.243
+  ],
+  "sigma": {
+   "cpu_user": 0.101,
+   "cpu_system": 0.101,
+   "tx_bytes": 0.1464,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   0.682,
+   0.0,
+   0.0,
+   0.006
+  ],
+  "threshold": 2.386122226715088
+ },
+ "user-memcached": {
+  "type": "memcached",
+  "columns": 8,
+  "left_out": [
+   "mem_cache",
+   "threads"
+  ],
+  "condition": [
+   1.888,
+   0.348,
+   -1.392,
+   -1.569
+  ],
+  "sigma": {
+   "cpu_user": 0.1182,
+   "cpu_system": 0.1001,
+   "mem_working_set": 0.1037,
+   "mem_rss": 0.1,
+   "rx_bytes": 0.1,
+   "tx_bytes": 0.1,
+   "rx_packets": 0.1,
+   "tx_packets": 0.1
+  },
+  "kl_per_dim": [
+   3.55,
+   0.0,
+   0.0,
+   0.042
+  ],
+  "threshold": 15.01705551147461
+ },
+ "user-timeline-redis": {
+  "type": "redis",
+  "columns": 10,
+  "left_out": [],
+  "condition": [
+   0.77,
+   -1.06,
+   -0.94,
+   -0.209
+  ],
+  "sigma": {
+   "cpu_user": 0.2071,
+   "cpu_system": 0.1092,
+   "mem_working_set": 0.1174,
+   "mem_rss": 0.1109,
+   "mem_cache": 0.1033,
+   "threads": 0.105,
+   "rx_bytes": 0.2429,
+   "tx_bytes": 0.2258,
+   "rx_packets": 0.1028,
+   "tx_packets": 0.1014
+  },
+  "kl_per_dim": [
+   2.684,
+   0.0,
+   0.0,
+   0.325
+  ],
+  "threshold": 229.13177490234375
+ }
+}

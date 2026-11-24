@@ -1,0 +1,74 @@
+run,fold,scenario,targets,model found,model minutes,model recall,model top@1,model top@3,model top@5,model+restart found,model+restart minutes,model+restart recall,model+restart top@1,model+restart top@3,model+restart top@5,model+restart+absence found,model+restart+absence minutes,model+restart+absence recall,model+restart+absence top@1,model+restart+absence top@3,model+restart+absence top@5,top 5 at the first alarm
+dev/io_latency_mongodb_profile_hotel_res__r1,dev,io_latency_mongodb_profile,mongodb-profile,0,,0.0,0,0,0,0,,0.0,0,0,0,0,,0.0,0,0,0,
+dev/io_latency_mongodb_profile_hotel_res__r2,dev,io_latency_mongodb_profile,mongodb-profile,0,,0.1,0,0,0,0,,0.1,0,0,0,0,,0.1,0,0,0,
+dev/io_latency_mongodb_profile_hotel_res__r3,dev,io_latency_mongodb_profile,mongodb-profile,1,4.5,0.433,0,0,0,1,4.5,0.433,0,0,0,1,4.5,0.433,0,0,0,memcached-reserve 1.2; search 0.6; rate 0.4; geo 0.3; recommendation 0.3
+dev/mem_stress_reservation_hotel_res__r1,dev,mem_stress_reservation,reservation,0,,0.067,0,0,0,0,,0.067,0,0,0,0,,0.067,0,0,0,
+dev/mem_stress_reservation_hotel_res__r2,dev,mem_stress_reservation,reservation,1,0.8,0.033,1,1,1,1,0.8,0.033,1,1,1,1,0.8,0.033,1,1,1,reservation 9.8; geo 0.7; search 0.4; frontend 0.4; profile 0.3
+dev/mem_stress_reservation_hotel_res__r3,dev,mem_stress_reservation,reservation,1,0.8,0.2,1,1,1,1,0.8,0.2,1,1,1,1,0.8,0.2,1,1,1,reservation 28.8; memcached-reserve 1.8; frontend 0.8; geo 0.6; profile 0.6
+dev/net_bandwidth_mongodb_reservation_hotel_res__r1,dev,net_bandwidth_mongodb_reservation,mongodb-reservation,1,7.1,0.033,1,1,1,1,7.1,0.067,1,1,1,1,7.1,0.067,1,1,1,mongodb-reservation 1.0; memcached-reserve 0.4; frontend 0.2; rate 0.2; geo 0.2
+dev/net_bandwidth_mongodb_reservation_hotel_res__r2,dev,net_bandwidth_mongodb_reservation,mongodb-reservation,0,,0.0,0,0,0,0,,0.0,0,0,0,0,,0.0,0,0,0,
+dev/net_bandwidth_mongodb_reservation_hotel_res__r3,dev,net_bandwidth_mongodb_reservation,mongodb-reservation,0,,0.0,0,0,0,0,,0.0,0,0,0,0,,0.0,0,0,0,
+dev/net_corrupt_recommendation_hotel_res__r1,dev,net_corrupt_recommendation,recommendation,1,9.5,0.233,0,0,1,1,9.5,0.233,0,0,1,1,9.5,0.233,0,0,1,frontend 2.5; memcached-profile 1.0; profile 0.7; recommendation 0.7; rate 0.4
+dev/net_corrupt_recommendation_hotel_res__r2,dev,net_corrupt_recommendation,recommendation,1,10.3,0.333,0,1,1,1,10.3,0.333,0,1,1,1,10.3,0.333,0,1,1,frontend 1.0; recommendation 0.7; profile 0.6; rate 0.3; memcached-profile 0.3
+dev/net_corrupt_recommendation_hotel_res__r3,dev,net_corrupt_recommendation,recommendation,1,1.0,0.667,0,1,1,1,1.0,0.667,0,1,1,1,1.0,0.667,0,1,1,geo 1.1; recommendation 0.7; profile 0.5; memcached-reserve 0.3; memcached-profile 0.3
+dev/net_delay_search_hotel_res__r1,dev,net_delay_search,search,1,2.7,0.533,1,1,1,1,2.7,0.533,1,1,1,1,2.7,0.533,1,1,1,search 1.0; geo 0.9; memcached-reserve 0.6; rate 0.5; memcached-profile 0.5
+dev/net_delay_search_hotel_res__r2,dev,net_delay_search,search,1,1.3,0.033,1,1,1,1,1.3,0.033,1,1,1,1,1.3,0.033,1,1,1,search 1.1; geo 1.0; rate 0.6; frontend 0.5; profile 0.4
+dev/pod_kill_frontend_hotel_res__r1,dev,pod_kill_frontend,frontend,1,0.8,0.733,1,1,1,1,0.8,0.733,1,1,1,1,0.8,0.733,1,1,1,frontend 12.2; profile 1.0; geo 0.9; memcached-rate 0.7; memcached-reserve 0.7
+dev/pod_kill_frontend_hotel_res__r2,dev,pod_kill_frontend,frontend,1,1.1,0.933,0,1,1,1,1.1,0.933,0,1,1,1,1.1,0.933,0,1,1,memcached-reserve 11.2; frontend 8.0; rate 7.2; memcached-profile 6.0; search 3.5
+dev/pod_kill_frontend_hotel_res__r3,dev,pod_kill_frontend,frontend,1,1.0,0.267,1,1,1,1,1.0,0.267,1,1,1,1,1.0,0.267,1,1,1,frontend 9.3; rate 1.1; profile 0.9; memcached-rate 0.7; search 0.6
+dev/stress_cpu_search_20_hotel_res__r1,dev,stress_cpu_search_20,search,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,search 9.9; memcached-reserve 2.8; frontend 1.7; geo 1.2; profile 0.6
+dev/stress_cpu_search_20_hotel_res__r2,dev,stress_cpu_search_20,search,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,search 15.0; memcached-reserve 1.3; frontend 1.2; profile 0.6; geo 0.5
+dev/stress_cpu_search_5_hotel_res__r1,dev,stress_cpu_search_5,search,1,2.5,1.0,1,1,1,1,2.5,1.0,1,1,1,1,2.5,1.0,1,1,1,search 11.9; geo 1.0; profile 0.6; recommendation 0.6; memcached-reserve 0.5
+dev/stress_cpu_search_5_hotel_res__r2,dev,stress_cpu_search_5,search,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,search 4.1; frontend 0.8; memcached-reserve 0.7; recommendation 0.7; memcached-profile 0.5
+dev/stress_cpu_search_80_hotel_res__r1,dev,stress_cpu_search_80,search,1,1.2,0.933,1,1,1,1,1.2,0.933,1,1,1,1,1.2,0.933,1,1,1,search 14.1; user 0.3; memcached-profile 0.2; recommendation 0.2; profile 0.2
+dev/stress_cpu_search_80_hotel_res__r2,dev,stress_cpu_search_80,search,1,1.1,1.0,1,1,1,1,1.1,1.0,1,1,1,1,1.1,1.0,1,1,1,search 40.7; frontend 1.5; memcached-reserve 0.7; recommendation 0.7; profile 0.5
+test/container_kill_hotel_res__r1,test,container_kill,geo,1,0.8,0.067,1,1,1,1,0.8,0.067,1,1,1,1,0.8,0.067,1,1,1,geo 4.7 restart; profile 0.6; recommendation 0.6; search 0.5; rate 0.4
+test/container_kill_hotel_res__r2,test,container_kill,geo,1,0.5,0.067,1,1,1,1,0.5,0.067,1,1,1,1,0.5,0.067,1,1,1,geo 3.0 restart; profile 1.6; frontend 0.8; search 0.5; user 0.4
+test/container_kill_hotel_res__r3,test,container_kill,geo,1,1.1,0.233,1,1,1,1,0.6,0.233,1,1,1,1,0.6,0.233,1,1,1,geo 0.9 restart; frontend 1.5; profile 0.6; search 0.6; rate 0.4
+test/container_kill_hotel_res__r4,test,container_kill,geo,1,0.9,0.3,1,1,1,1,0.4,0.333,1,1,1,1,0.4,0.333,1,1,1,geo 0.6 restart; search 1.0; memcached-reserve 0.9; profile 0.7; frontend 0.5
+test/container_kill_hotel_res__r5,test,container_kill,geo,1,0.8,0.067,1,1,1,1,0.8,0.067,1,1,1,1,0.8,0.067,1,1,1,geo 5.7 restart; user 0.5; frontend 0.4; rate 0.4; profile 0.4
+test/misconfig_app_hotel_res__r1,test,misconfig_app,geo,1,1.0,1.0,0,1,1,1,1.0,1.0,1,1,1,1,1.0,1.0,1,1,1,geo 2.6 restart absent; memcached-reserve 3.2; rate 2.2; frontend 2.1; profile 0.9
+test/misconfig_app_hotel_res__r2,test,misconfig_app,geo,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,geo 2.9 restart absent; rate 0.6; profile 0.6; memcached-reserve 0.5; frontend 0.5
+test/misconfig_app_hotel_res__r3,test,misconfig_app,geo,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,geo 4.9 restart; frontend 0.3; memcached-reserve 0.3; reservation 0.2; search 0.2
+test/misconfig_app_hotel_res__r4,test,misconfig_app,geo,1,0.9,0.967,1,1,1,1,0.4,1.0,1,1,1,1,0.4,1.0,1,1,1,geo 0.4 restart; frontend 0.6; memcached-reserve 0.5; profile 0.4; search 0.4
+test/misconfig_app_hotel_res__r5,test,misconfig_app,geo,1,1.0,1.0,1,1,1,1,0.5,1.0,1,1,1,1,0.5,1.0,1,1,1,geo 0.7 restart; frontend 1.4; memcached-reserve 0.8; recommendation 0.5; profile 0.4
+test/network_delay_hotel_res__r1,test,network_delay,user,1,1.8,0.1,0,0,0,1,1.8,0.1,0,0,0,1,1.8,0.1,0,0,0,geo 1.1; frontend 0.8; profile 0.7; memcached-reserve 0.7; search 0.5
+test/network_delay_hotel_res__r2,test,network_delay,user,1,1.0,0.1,1,1,1,1,1.0,0.1,1,1,1,1,1.0,0.1,1,1,1,user 1.3; frontend 1.1; geo 0.9; mongodb-user 0.8; search 0.4
+test/network_delay_hotel_res__r3,test,network_delay,user,1,0.9,0.033,1,1,1,1,0.9,0.033,1,1,1,1,0.9,0.033,1,1,1,user 1.1; memcached-reserve 0.4; mongodb-rate 0.2; frontend 0.2; profile 0.2
+test/network_delay_hotel_res__r4,test,network_delay,user,0,,0.0,0,0,0,0,,0.0,0,0,0,0,,0.0,0,0,0,
+test/network_delay_hotel_res__r5,test,network_delay,user,0,,0.0,0,0,0,0,,0.0,0,0,0,0,,0.0,0,0,0,
+test/network_loss_hotel_res__r1,test,network_loss,user,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,user 1.5; geo 0.7; profile 0.7; search 0.5; memcached-profile 0.4
+test/network_loss_hotel_res__r2,test,network_loss,user,1,1.3,1.0,1,1,1,1,1.3,1.0,1,1,1,1,1.3,1.0,1,1,1,user 15.5; memcached-reserve 1.5; frontend 1.4; geo 0.8; search 0.6
+test/network_loss_hotel_res__r3,test,network_loss,user,1,1.3,1.0,1,1,1,1,1.3,1.0,1,1,1,1,1.3,1.0,1,1,1,user 9.2; memcached-reserve 1.8; frontend 1.6; geo 0.9; search 0.8
+test/network_loss_hotel_res__r4,test,network_loss,user,1,1.4,0.933,1,1,1,1,1.4,0.933,1,1,1,1,1.4,0.933,1,1,1,user 19.2; frontend 1.0; recommendation 0.4; geo 0.3; mongodb-user 0.3
+test/network_loss_hotel_res__r5,test,network_loss,user,1,1.3,0.933,1,1,1,1,1.3,0.933,1,1,1,1,1.3,0.933,1,1,1,user 1.3; frontend 0.9; mongodb-user 0.5; recommendation 0.3; memcached-rate 0.2
+test/pod_failure_hotel_res__r1,test,pod_failure,user,1,1.7,1.0,1,1,1,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,user 0.2 restart absent; memcached-reserve 2.2; frontend 1.6; search 1.1; geo 0.9
+test/pod_failure_hotel_res__r2,test,pod_failure,user,1,1.5,0.903,1,1,1,1,0.5,0.968,1,1,1,1,0.5,0.968,1,1,1,user 0.1 restart absent; memcached-reserve 0.6; memcached-profile 0.5; frontend 0.4; geo 0.3
+test/pod_failure_hotel_res__r3,test,pod_failure,user,1,1.2,0.933,1,1,1,1,0.7,0.967,1,1,1,1,0.7,0.967,1,1,1,user 0.4 restart absent; frontend 0.6; profile 0.5; geo 0.4; search 0.4
+test/pod_failure_hotel_res__r4,test,pod_failure,user,1,1.6,0.903,1,1,1,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,user 0.1 restart absent; frontend 0.6; memcached-reserve 0.4; recommendation 0.2; rate 0.1
+test/pod_failure_hotel_res__r5,test,pod_failure,user,1,1.3,1.0,1,1,1,1,0.3,1.0,1,1,1,1,0.3,1.0,1,1,1,user 0.1 restart absent; frontend 1.4; geo 0.7; rate 0.6; profile 0.4
+test/revoke_auth_mongoDB_geo_hotel_res__r1,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,0.8,1.0,0,0,0,1,0.3,1.0,1,1,1,1,0.3,1.0,1,1,1,geo 0.4 restart absent; frontend 1.1; memcached-reserve 0.9; profile 0.7; search 0.5
+test/revoke_auth_mongoDB_geo_hotel_res__r2,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1.0,0.967,0,0,0,1,0.5,1.0,1,1,1,1,0.5,1.0,1,1,1,geo 1.0 restart absent; memcached-reserve 0.8; search 0.8; rate 0.5; frontend 0.5
+test/revoke_auth_mongoDB_geo_hotel_res__r3,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,0.9,0.967,0,0,0,1,0.4,1.0,1,1,1,1,0.4,1.0,1,1,1,geo 0.0 restart absent; memcached-reserve 0.6; profile 0.6; recommendation 0.4; memcached-rate 0.3
+test/revoke_auth_mongoDB_geo_hotel_res__r4,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1.2,0.935,0,0,0,1,0.7,0.968,1,1,1,1,0.7,0.968,1,1,1,geo 0.5 restart absent; recommendation 0.5; search 0.4; profile 0.4; memcached-profile 0.3
+test/revoke_auth_mongoDB_geo_hotel_res__r5,test,revoke_auth_mongoDB_geo,geo mongodb-geo,1,1.3,0.933,0,0,1,1,0.8,0.967,1,1,1,1,0.3,1.0,1,1,1,geo 0.0 absent; frontend 0.6; profile 0.2; search 0.2; recommendation 0.2
+test/revoke_auth_mongoDB_rate_hotel_res__r1,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,0.6,0.968,0,0,0,1,0.6,0.968,1,1,1,1,0.6,0.968,1,1,1,rate 0.2 restart absent; memcached-rate 5.3; memcached-reserve 0.4; search 0.4; frontend 0.4
+test/revoke_auth_mongoDB_rate_hotel_res__r2,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,0.7,0.967,0,0,0,1,0.7,0.967,1,1,1,1,0.7,0.967,1,1,1,rate 0.2 restart absent; memcached-rate 9.8; recommendation 0.4; frontend 0.4; memcached-reserve 0.3
+test/revoke_auth_mongoDB_rate_hotel_res__r3,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,0.7,1.0,0,0,0,1,0.7,1.0,1,1,1,1,0.7,1.0,1,1,1,rate 0.4 restart absent; memcached-rate 4.2; frontend 1.5; memcached-reserve 1.5; profile 0.8
+test/revoke_auth_mongoDB_rate_hotel_res__r4,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,0.9,1.0,0,1,1,1,0.4,1.0,1,1,1,1,0.4,1.0,1,1,1,rate 0.2 restart absent; frontend 1.9; memcached-reserve 1.0; profile 0.8; search 0.7
+test/revoke_auth_mongoDB_rate_hotel_res__r5,test,revoke_auth_mongoDB_rate,rate mongodb-rate,1,0.5,0.968,0,0,0,1,0.5,0.968,1,1,1,1,0.5,0.968,1,1,1,rate 0.1 restart absent; memcached-rate 3.7; memcached-reserve 0.3; frontend 0.3; memcached-profile 0.3
+test/user_unregistered_mongodb_geo_hotel_res__r1,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,geo 14.2 restart absent; search 1.2; memcached-rate 1.0; profile 1.0; frontend 0.7
+test/user_unregistered_mongodb_geo_hotel_res__r2,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,geo 17.1 restart absent; frontend 0.9; memcached-reserve 0.8; rate 0.8; search 0.6
+test/user_unregistered_mongodb_geo_hotel_res__r3,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1.2,0.933,0,0,0,1,0.7,0.967,1,1,1,1,0.7,0.967,1,1,1,geo 0.3 restart absent; frontend 0.9; memcached-rate 0.6; profile 0.6; memcached-reserve 0.5
+test/user_unregistered_mongodb_geo_hotel_res__r4,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,0.3,1.0,0,0,0,1,0.3,1.0,1,1,1,1,0.3,1.0,1,1,1,geo 0.4 restart absent; search 1.1; frontend 1.1; memcached-reserve 0.8; profile 0.7
+test/user_unregistered_mongodb_geo_hotel_res__r5,test,user_unregistered_mongodb_geo,geo mongodb-geo,1,1.2,0.933,0,0,0,1,0.7,0.967,1,1,1,1,0.7,0.967,1,1,1,geo 0.0 restart absent; memcached-reserve 0.9; memcached-profile 0.6; frontend 0.4; profile 0.2
+test/user_unregistered_mongodb_rate_hotel_res__r1,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,rate 7.9 restart absent; frontend 0.5; memcached-reserve 0.5; memcached-rate 0.5; search 0.4
+test/user_unregistered_mongodb_rate_hotel_res__r2,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,rate 7.5 restart absent; memcached-reserve 0.6; frontend 0.3; profile 0.3; search 0.3
+test/user_unregistered_mongodb_rate_hotel_res__r3,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,rate 1.3 restart absent; frontend 1.0; search 0.6; mongodb-rate 0.6; memcached-rate 0.5
+test/user_unregistered_mongodb_rate_hotel_res__r4,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,0.9,1.0,1,1,1,1,0.4,1.0,1,1,1,1,0.4,1.0,1,1,1,rate 0.5 restart absent; geo 1.0; profile 0.4; recommendation 0.3; search 0.3
+test/user_unregistered_mongodb_rate_hotel_res__r5,test,user_unregistered_mongodb_rate,rate mongodb-rate,1,1.0,1.0,0,1,1,1,0.5,1.0,1,1,1,1,0.5,1.0,1,1,1,rate 0.9 restart absent; memcached-reserve 1.5; frontend 1.2; geo 0.9; search 0.7
+test/wrong_bin_usage_hotel_res__r1,test,wrong_bin_usage,profile,1,1.0,0.935,1,1,1,1,1.0,0.935,1,1,1,1,1.0,0.935,1,1,1,profile 4.8; memcached-profile 0.9; frontend 0.7; mongodb-rate 0.3; mongodb-geo 0.3
+test/wrong_bin_usage_hotel_res__r2,test,wrong_bin_usage,profile,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,1,0.9,0.967,1,1,1,profile 4.7; frontend 0.9; memcached-profile 0.9; geo 0.7; search 0.6
+test/wrong_bin_usage_hotel_res__r3,test,wrong_bin_usage,profile,1,0.5,1.0,1,1,1,1,0.5,1.0,1,1,1,1,0.5,1.0,1,1,1,profile 3.7; frontend 1.6; memcached-reserve 0.6; geo 0.6; search 0.6
+test/wrong_bin_usage_hotel_res__r4,test,wrong_bin_usage,profile,1,0.6,0.967,1,1,1,1,0.6,0.967,1,1,1,1,0.6,0.967,1,1,1,profile 5.6; frontend 0.6; recommendation 0.4; mongodb-geo 0.3; geo 0.3
+test/wrong_bin_usage_hotel_res__r5,test,wrong_bin_usage,profile,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,1,0.8,0.967,1,1,1,profile 5.6; frontend 0.2; mongodb-geo 0.2; geo 0.2; memcached-profile 0.2

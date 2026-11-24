@@ -1,0 +1,7 @@
+fold,variant,fault inferences,healthy inferences,TP,FN,FP,TN,precision,recall,F1,F0.5,F2,healthy in alarm % test,healthy in alarm % test-unseen,healthy in alarm % noop,faults found %,"minutes to alarm, median",top@1 %,top@3 %,top@5 %
+test,model,926,1234,868,58,161,1073,0.844,0.937,0.888,0.861,0.917,1.4,39.2,2.9,100.0,1.1,10.0,36.7,53.3
+test,model+restart,926,1234,878,48,161,1073,0.845,0.948,0.894,0.864,0.926,1.4,39.2,2.9,100.0,1.1,20.0,46.7,60.0
+test,model+restart+absence,926,1234,881,45,161,1073,0.845,0.951,0.895,0.865,0.928,1.4,39.2,2.9,100.0,1.0,53.3,80.0,93.3
+dev,model,751,0,444,307,0,0,,0.591,,,,,,,88.0,0.9,56.0,72.0,80.0
+dev,model+restart,751,0,444,307,0,0,,0.591,,,,,,,88.0,0.9,64.0,80.0,80.0
+dev,model+restart+absence,751,0,444,307,0,0,,0.591,,,,,,,88.0,0.9,64.0,80.0,80.0

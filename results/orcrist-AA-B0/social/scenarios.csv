@@ -1,0 +1,17 @@
+fold,scenario,runs,model found,model recall,model top@1,model top@3,model top@5,model+restart found,model+restart recall,model+restart top@1,model+restart top@3,model+restart top@5,model+restart+absence found,model+restart+absence recall,model+restart+absence top@1,model+restart+absence top@3,model+restart+absence top@5,model minutes,model+restart minutes,model+restart+absence minutes
+dev,mem_stress_graph,3,100,47,67,100,100,100,47,67,100,100,100,47,67,100,100,0.8,0.8,0.8
+dev,net_bandwidth_home_timeline_redis,3,67,44,0,33,33,67,44,0,33,33,67,44,0,33,33,5.35,5.35,5.35
+dev,net_corrupt_media,3,100,96,100,100,100,100,96,100,100,100,100,96,100,100,100,0.9,0.9,0.9
+dev,net_delay_home_timeline,2,100,63,0,0,0,100,63,0,0,0,100,63,0,0,0,0.9,0.9,0.9
+dev,net_loss_graph_mongodb,3,33,1,0,0,0,33,1,0,0,0,33,1,0,0,0,8.9,8.9,8.9
+dev,pod_failure_user_timeline_mongodb,2,100,98,0,0,100,100,98,100,100,100,100,98,100,100,100,0.5,0.5,0.5
+dev,pod_kill_unique_id,3,100,8,100,100,100,100,8,100,100,100,100,8,100,100,100,0.7,0.7,0.7
+dev,stress_cpu_compose_post_20,2,100,97,100,100,100,100,97,100,100,100,100,97,100,100,100,0.8500000000000001,0.8500000000000001,0.8500000000000001
+dev,stress_cpu_compose_post_5,2,100,67,100,100,100,100,67,100,100,100,100,67,100,100,100,1.05,1.05,1.05
+dev,stress_cpu_compose_post_80,2,100,97,50,50,50,100,97,50,50,50,100,97,50,50,50,0.65,0.65,0.65
+test,assign_to_non_existent_node,5,100,96,0,0,0,100,96,0,0,0,100,96,100,100,100,1.2,1.2,1.1
+test,auth_miss_mongoDB,5,100,85,40,40,60,100,92,100,100,100,100,92,100,100,100,4.0,1.3,1.3
+test,port_misconfig_post_storage,5,100,96,0,0,60,100,96,0,0,60,100,96,0,0,60,1.0,1.0,1.0
+test,port_misconfig_text,5,100,95,0,40,80,100,95,0,40,80,100,95,0,40,80,1.0,1.0,1.0
+test,port_misconfig_user,5,100,96,0,40,60,100,96,0,40,60,100,96,0,40,60,0.9,0.9,0.9
+test,scale_pod_zero,5,100,94,0,20,20,100,94,0,20,20,100,96,80,100,100,1.4,1.4,1.0
