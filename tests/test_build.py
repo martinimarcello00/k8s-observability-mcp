@@ -47,6 +47,19 @@ assert same(m[:, 0], [11, nan, 33]) and same(m[:, 1], [1, 2, 3]) and same(m[:, 2
 net = [s("geo-5d4f-abcde", "", [[0, "0"], [16, "1600"], [32, "3200"]], interface="eth0"), s("geo-5d4f-abcde", "geo", [[0, "0"], [16, "9"]])]
 assert same(b.feature_matrix(net, "rate", "pod", services, np.array([30.0, 60.0]), 30)[:, 1], [100, 100])  # the pod's own eth0 series
 
+# --- container starts: once per container however many scrapes repeat it; a restart and a new pod both count; none before the grid
+starts = [s("frontend-77-xyz", "app", [[40, "35"], [70, "35"]]), s("frontend-77-abc", "app", [[80, "75"]]),
+          s("geo-5d4f-abcde", "geo", [[10, "-100"], [40, "-100"]])]
+assert same(b.container_starts(starts, services, grid, 30), [[0, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]])
+
+# --- arrays: the base set by default, the extra channels appended after it on request
+z = {"x": np.zeros((2, 1, 2)), "mask": np.ones((2, 1, 2), bool), "features": np.array(["cpu", "restarts"]),
+     "x_extra": np.ones((2, 1, 1)), "mask_extra": np.zeros((2, 1, 1), bool), "features_extra": np.array(["starts"])}
+x, mask, f = b.arrays(z)
+assert x.shape == (2, 1, 2) and mask.all() and f == ["cpu", "restarts"]
+x, mask, f = b.arrays(z, extra=True)
+assert x.shape == (2, 1, 3) and f == ["cpu", "restarts", "starts"] and (x[:, :, :2] == 0).all() and not mask[:, :, 2].any()
+
 # --- datagraph: services, databases and caches, not the CALLS edges
 graph = Path(tempfile.mkdtemp()) / "g.txt"
 graph.write_text("MERGE (s:Service {name: 'frontend'});\nMERGE (db:Database {name: 'mongodb-geo'});\n"

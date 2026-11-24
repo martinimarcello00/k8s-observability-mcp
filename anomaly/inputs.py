@@ -34,7 +34,7 @@ def fill_misses(x, features, exists=None):
     present [T, S, 2] bool, one flag per group (container, network): True where the group has data after filling,
     or where the group does not exist at all.
     """
-    level = {name: lvl for name, _, _, lvl in build.FEATURES}
+    level = {f[0]: f[3] for f in build.FEATURES + build.EXTRA}
     exists = ~np.isnan(x).all(axis=0) if exists is None else np.asarray(exists, bool)
     cols = {g: [j for j, f in enumerate(features) if level[f] == g] for g in GROUPS}
     restarts = np.nan_to_num(x[:, :, features.index("restarts")]) if "restarts" in features else np.zeros(x.shape[:2])

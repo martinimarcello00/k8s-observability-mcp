@@ -9,6 +9,8 @@ RAW_APP_DIR is <out>/<app> of collect_dataset.py. Next to the arrays below, OUT_
   t [T]                 grid times (end of each step, unix seconds)
   rate, mix [T]         load of the wrk2 segment at each step (-1 outside the schedule)
   services, features    names of the S and F axes
+  x_extra, mask_extra, features_extra   the same for the EXTRA channels (2026-11-24), kept apart: x, mask and
+                        features hold the base FEATURES only, as before. arrays(z, extra=True) joins the two.
 and OUT_DIR/<kind>/<run>.json: labels, split, load schedule, the validity checks V1-V4 and V5_traces, whether the run's
 traces are whole (it gates the trace features only, never the metrics); V5_traces[1]["trace_gaps"] lists the steps whose
 trace features are missing (typed.span_features(..., gaps=...)).
@@ -40,6 +42,19 @@ FEATURES = [
     ("rx_packets", "container_network_receive_packets_total", "rate", "pod"),
     ("tx_packets", "container_network_transmit_packets_total", "rate", "pod"),
     ("restarts", "kube_pod_container_status_restarts_total", "rate", "kube"),  # state channel: restarts per second
+]
+# Extra channels, in x_extra so that FEATURES and x stay the base set. The same fields plus a label filter; kind "event"
+# counts the containers started in each step. Left out after a look at the dev faults: K8s ready, waiting, replicas and
+# endpoints (they never moved: a killed pod is replaced within one step), network errors, drops and OOM events (0 even
+# under corrupt, loss and memory stress), processes (1 -> 4 under every StressChaos: it counts Chaos Mesh's stressors,
+# which run in the target's container, so it sees the injection tool, not the fault).
+EXTRA = [
+    ("sockets", "container_sockets", "gauge", "container", {}),
+    ("file_descriptors", "container_file_descriptors", "gauge", "container", {}),
+    ("pgfault", "container_memory_failures_total", "rate", "container", {"failure_type": "pgfault", "scope": "container"}),
+    ("fs_write_bytes", "container_fs_writes_bytes_total", "rate", "container", {}),
+    ("fs_writes", "container_fs_writes_total", "rate", "container", {}),
+    ("starts", "kube_pod_container_state_started", "event", "kube", {}),  # a restart or a new pod: containers started
 ]
 MIN_RATE_SHARE = 0.9  # V1: a wrk2 segment must deliver at least this share of its target rate
 MAX_MASKED = 0.2  # V3: at most this share of empty cells overall, and twice this for any service and feature
@@ -136,6 +151,46 @@ def feature_matrix(series, metric_kind, level, services, grid, step):
         total = np.where(present, stack, 0).sum(axis=0)
         out[:, i] = np.where(count > 0, total / np.maximum(count, 1), np.nan)
     return out
+
+
+def container_starts(series, services, grid, step):
+    """[T, S]: how many containers of the service started in each grid step (t - step, t], from their start time.
+
+    A restart starts a container, and so does a new pod. A killed pod is replaced by a new one with 0 restarts, which
+    fills the same 30 s step: neither restarts nor missing samples see it, its start does. 0, not NaN, where none started.
+    """
+    out = np.zeros((len(grid), len(services)))
+    index = {name: i for i, name in enumerate(services)}
+    # every scrape repeats a container's start time: count each container start once
+    for pod, _, t in {(s["metric"]["pod"], s["metric"].get("container"), float(v)) for s in series for _, v in s["values"]}:
+        cell = np.searchsorted(grid, t, side="left")
+        if pod_service(pod) in index and cell < len(grid) and grid[cell] - t < step:
+            out[cell, index[pod_service(pod)]] += 1
+    return out
+
+
+def channels(attempt_dir, specs, services, grid, step):
+    """[T, S, len(specs)] from the run's Prometheus export, for FEATURES or EXTRA; NaN where a metric was not exported."""
+    x = np.full((len(grid), len(services), len(specs)), np.nan, dtype=np.float64)
+    for j, (_, metric, kind, level, *rest) in enumerate(specs):
+        path = Path(attempt_dir) / "prometheus" / f"{metric}.json.gz"
+        if not path.exists():
+            continue
+        labels = rest[0] if rest else {}
+        with gzip.open(path, "rt") as f:
+            series = [s for s in json.load(f) if all(s["metric"].get(k) == v for k, v in labels.items())]
+        x[:, :, j] = container_starts(series, services, grid, step) if kind == "event" else feature_matrix(series, kind, level, services, grid, step)
+    return x
+
+
+def arrays(z, extra=False):
+    """(x, mask, features) of a built run (np.load of its .npz): the base FEATURES, or with extra=True the base ones
+    followed by EXTRA. The base columns keep their place either way."""
+    x, mask, features = z["x"], z["mask"], [str(f) for f in z["features"]]
+    if extra:
+        x, mask = np.concatenate([x, z["x_extra"]], axis=2), np.concatenate([mask, z["mask_extra"]], axis=2)
+        features += [str(f) for f in z["features_extra"]]
+    return x, mask, features
 
 
 MS = {"us": 1e-3, "ms": 1.0, "s": 1e3, "m": 6e4}
@@ -240,12 +295,8 @@ def build_run(attempt_dir, datagraph_dir, step=30):
     services = datagraph_services(Path(datagraph_dir) / DATAGRAPH[meta["app_scenario"]])
     start = run_meta.get("t_workload", run_meta["t_inject"])
     grid = np.arange(math.ceil(start / step) * step, meta["t_export"], step, dtype=float)
-    x = np.full((len(grid), len(services), len(FEATURES)), np.nan, dtype=np.float64)
-    for j, (_, metric, kind, level) in enumerate(FEATURES):
-        path = attempt_dir / "prometheus" / f"{metric}.json.gz"
-        if path.exists():
-            with gzip.open(path, "rt") as f:
-                x[:, :, j] = feature_matrix(json.load(f), kind, level, services, grid, step)
+    x = channels(attempt_dir, FEATURES, services, grid, step)
+    x_extra = channels(attempt_dir, EXTRA, services, grid, step)
     mask = ~np.isnan(x)
     log = attempt_dir / "logs" / "wrk2.log.gz"
     segments = load_segments(gzip.open(log, "rt").read()) if log.exists() else []
@@ -256,8 +307,9 @@ def build_run(attempt_dir, datagraph_dir, step=30):
     labels.update(t_workload=run_meta.get("t_workload"), t_inject=run_meta["t_inject"], t_injected=run_meta["t_injected"], step=step,
                   checks={**checks(meta, segments, x, mask, grid, features, services, step), "V4_host_io": host_io_check(attempt_dir, grid, step)},
                   segments=segments)
-    arrays = dict(x=x.astype(np.float32), mask=mask, t=grid, rate=rate, mix=mix, services=np.array(services), features=np.array(features))
-    return arrays, labels
+    out = dict(x=x.astype(np.float32), mask=mask, t=grid, rate=rate, mix=mix, services=np.array(services), features=np.array(features),
+               x_extra=x_extra.astype(np.float32), mask_extra=~np.isnan(x_extra), features_extra=np.array([f[0] for f in EXTRA]))
+    return out, labels
 
 
 def last_valid_attempt(run_dir):
@@ -281,18 +333,18 @@ def main(argv=None):
         if attempt is None:
             print(f"{run_dir.parent.name}/{run_dir.name}: no valid attempt, skipped")
             continue
-        arrays, labels = build_run(attempt, args.datagraph, args.step)
+        data, labels = build_run(attempt, args.datagraph, args.step)
         from anomaly import typed  # pandas: only the typed tables need it
         spans = typed.add_callees(typed.spans(attempt), args.datagraph / DATAGRAPH[labels["app_scenario"]])
-        labels["V5_traces"] = typed.trace_check(spans, attempt, labels, grid=arrays["t"])  # apart from checks: it gates the trace features only
+        labels["V5_traces"] = typed.trace_check(spans, attempt, labels, grid=data["t"])  # apart from checks: it gates the trace features only
         target = args.out / run_dir.parent.name / run_dir.name
         target.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(target.with_suffix(".npz"), **arrays)
+        np.savez_compressed(target.with_suffix(".npz"), **data)
         target.with_suffix(".json").write_text(json.dumps(labels, indent=1))
         spans.to_csv(f"{target}.spans.csv.gz", index=False)
         typed.logs(attempt).to_csv(f"{target}.logs.csv.gz", index=False)
         verdict = {k: v[0] for k, v in labels["checks"].items() if k != "window"} | {"V5_traces": labels["V5_traces"][0]}
-        print(f"{run_dir.parent.name}/{run_dir.name}: {arrays['x'].shape}, masked {labels['checks']['V3_coverage'][1]['masked_share']}, {verdict}")
+        print(f"{run_dir.parent.name}/{run_dir.name}: {data['x'].shape}, masked {labels['checks']['V3_coverage'][1]['masked_share']}, {verdict}")
 
 
 if __name__ == "__main__":
