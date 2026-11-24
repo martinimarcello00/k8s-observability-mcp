@@ -1,13 +1,17 @@
 """Evaluate a model on one app of the built dataset with the protocol below, and write down what it did.
 
-    PYTHONPATH=. python -m anomaly.models.evaluate pca hotel [--data <build.DATASET>/built] [--out results]
+    PYTHONPATH=. python -m anomaly.models.evaluate pca|orcrist-AA|... hotel [--data <build.DATASET>/built] [--out results]
 
 The protocol is the same for every model: only fitting and scoring belong to the model. A model in MODELS provides
 - features: the B0 features it reads (names, a subset of inputs.B0);
-- fit(X): X is a list of [T, S, F] arrays from inputs.prepare on those features, healthy loaded steps only;
+- fit(X, val, services): X and val are lists of [T, S, F] arrays from inputs.prepare on those features, healthy loaded
+  steps only, of the train and val sessions (val may stop the training; it also sets the threshold, below); services
+  names the S axis;
 - score(X) -> (r2, expected): for one run [T, S, F], each feature's share of the step's score (the score is their sum
   over F) and the value the model expects for it, in prepare units (NaN where it has none);
-- params (its settings) and card(services) (what it learned, per service).
+- params (its settings) and card(services) (what it learned, per service);
+- optionally spread(X) -> (sd, kl): the deviation the model expects around `expected` [T, S, F] (the normal range is
+  expected +- 2 sd) and a state score [T, S] (how unusual the step's latent state is), kept apart from the alarm score.
 
 Protocol
 - Roles from the labels: a clean session carries its split (train, val, test, test-unseen); a run of the fault folders
@@ -40,9 +44,15 @@ Written to OUT/<model>-B0/<app>/, overwritten at each run (git keeps the history
 - alarms.csv: one row per alarm episode (a service in alarm for consecutive steps, last variant), with the features
   behind its peak, observed and expected, and whether it began during a fault. Its unix times and services are the keys
   of the MCP tools (get_metrics_range, get_traces, get_logs) and of anomaly/traces.py, to go from an alarm to the raw data.
+- localization.jsonl: one line per step where the alarm of some service begins (last variant), when an operator or the
+  MAS would be called; the first one after an injection is where top@k is measured. The services ranked, each with its
+  degree (score / threshold), rules, and for those in alarm the features that make it anomalous (share, direction,
+  observed, expected, normal range when the model has spread) and its state (state score / its healthy maximum: above
+  1, a state never seen in train + val). The payload of the future MCP tool (docs/mcp_anomaly_tool_plan.md).
 """
 import argparse
 from datetime import datetime, timezone
+from functools import partial
 import json
 from pathlib import Path
 import subprocess
@@ -52,9 +62,17 @@ import numpy as np
 import pandas as pd
 
 from anomaly import build, inputs
-from anomaly.models import pca
+from anomaly.models import orcrist, pca
 
-MODELS = {"pca": pca.PCA}
+
+def make_orcrist(version):
+    """Orcrist at one version. torch is imported here, when an Orcrist model is asked for: the PCA, its notebook and
+    its tests run without it."""
+    from anomaly.models.orcrist.model import Orcrist
+    return Orcrist(version)
+
+
+MODELS = {"pca": pca.PCA, **{f"orcrist-{v}": partial(make_orcrist, v) for v in orcrist.VERSIONS}}
 REPO = Path(__file__).resolve().parents[2]
 WARMUP_S = 300  # the collector's settle_s: seconds under load before the injection
 SOURCES = ("test", "test-unseen", "noop")  # where the healthy inferences come from
@@ -193,6 +211,56 @@ def alarm_rows(r, features):
     return rows
 
 
+def healthy_max(runs, key):
+    """[S]: per service, the largest value of r.<key> over the loaded steps of the runs; inf where it is never above 0
+    (a service that never scored cannot alarm)."""
+    m = np.max([getattr(r, key)[r.on].max(0) for r in runs], 0)
+    return np.where(m > 0, m, np.inf)
+
+
+def g4(v):
+    return float(f"{v:.4g}")
+
+
+def why(r, k, i, features):
+    """The features that make service i anomalous at step k, as explain, with the direction and, when the model has
+    spread, the normal range (expected +- 2 sd), in inputs.UNITS."""
+    out = []
+    for f, share, o, e in explain(features, r.P, r.r2, r.expected, k, i):
+        row = {"feature": f, "share": round(share, 3), "direction": "up" if o > e else "down",
+               "observed": g4(o), "expected": g4(e), "unit": inputs.UNITS[f][1]}
+        if r.sd is not None:
+            j = features.index(f)
+            lo, hi = (inputs.to_units(r.expected[k, i, j] + n * r.sd[k, i, j], f) for n in (-2, 2))
+            row["normal"] = [g4(lo if f.startswith("mem") else max(lo, 0.0)), g4(hi)]
+        out.append(row)
+    return out
+
+
+def localization_rows(r, features, top=5):
+    """One row per step where the alarm of some service begins (last variant): the localization at that step."""
+    v, rows = VARIANTS[-1], []
+    new = starts(r.alarm[v]) & (r.on | r.fault)[:, None]
+    for a in np.where(new.any(1))[0]:
+        services = []
+        for n, i in enumerate(rank(r.norm[a], r.rule[v][a])[:top], 1):
+            rules = [name for name, hit in (("restart", r.restart[a, i]), ("absent", r.absent[a, i])) if hit]
+            alarm = bool(r.alarm[v][a, i])
+            row = {"service": r.services[i], "rank": n, "degree": round(float(r.norm[a, i]), 2), "in_alarm": alarm,
+                   "rules": rules}
+            if r.state is not None:
+                row["state"] = round(float(r.state[a, i]), 2)
+            row["features"] = why(r, a, i, features) if alarm and "absent" not in rules else []
+            services.append(row)
+        rows.append({"run": r.id, "role": r.role, "fold": r.fold, "scenario": r.scenario,
+                     "targets": [r.services[i] for i in r.targets], "t": int(r.t[a]),
+                     "t_utc": datetime.fromtimestamp(r.t[a], timezone.utc).isoformat(timespec="seconds"),
+                     "minutes_from_injection": round((r.t[a] - r.t_inject) / 60, 1) if r.t_inject else None,
+                     "during_fault": bool(r.fault[a]), "new": [r.services[i] for i in np.where(new[a])[0]],
+                     "services": services})
+    return rows
+
+
 def git_state():
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip()
     dirty = subprocess.run(["git", "status", "--porcelain", "--", "anomaly", ":!anomaly/notebooks"],
@@ -206,13 +274,13 @@ def compute(name, app, data):
     runs, model = load(app, data), MODELS[name]()
     cols, R = [inputs.B0.index(f) for f in model.features], inputs.B0.index("restarts")
     by = lambda *roles: [r for r in runs if r.role in roles]
-    model.fit([r.X[r.on][:, :, cols] for r in by("train")])
+    model.fit([r.X[r.on][:, :, cols] for r in by("train")], [r.X[r.on][:, :, cols] for r in by("val")], runs[0].services)
     for r in runs:
         r.P = r.X[:, :, cols]
         r.r2, r.expected = model.score(r.P)
         r.score, r.restart = persist(r.r2.sum(2)), np.nan_to_num(r.X[:, :, R]) > 0
-    thr = np.max([r.score[r.on].max(0) for r in by("train", "val")], 0)
-    thr = np.where(thr > 0, thr, np.inf)  # a service that never scored cannot alarm
+        r.sd, r.state = model.spread(r.P) if hasattr(model, "spread") else (None, None)
+    thr = healthy_max(by("train", "val"), "score")
     for r in runs:
         r.norm = r.score / thr
         r.rule = {"model": np.zeros_like(r.restart), "model+restart": r.restart, "model+restart+absence": r.restart | r.absent}
@@ -226,12 +294,19 @@ def compute(name, app, data):
     shares = [c for c in faults if c.startswith("model") and c not in minutes]
     scen = pd.concat([g.size().rename("runs"), (g[shares].mean() * 100).round().astype(int), g[minutes].median()], axis=1)
     alarms = pd.DataFrame([row for r in runs if r.fold for row in alarm_rows(r, model.features)])
+    if runs[0].state is not None:
+        for r in runs:
+            r.state = persist(r.state)
+        state_max = healthy_max(by("train", "val"), "state")
+        for r in runs:
+            r.state = r.state / state_max
+    localization = [row for r in runs if r.fold for row in localization_rows(r, model.features)]
     card = model.card(runs[0].services)
     for i, s in enumerate(runs[0].services):
         if card[s]:
             card[s]["threshold"] = float(thr[i])
     return SimpleNamespace(runs=runs, model=model, thr=thr, faults=faults, summary=summary, scenarios=scen,
-                           alarms=alarms, card=card)
+                           alarms=alarms, localization=localization, card=card)
 
 
 def evaluate(name, app, data, out):
@@ -263,6 +338,7 @@ def evaluate(name, app, data, out):
     res.scenarios.to_csv(d / "scenarios.csv")
     res.faults.to_csv(d / "faults.csv", index=False)
     res.alarms.to_csv(d / "alarms.csv", index=False)
+    (d / "localization.jsonl").write_text("".join(json.dumps(row) + "\n" for row in res.localization))
     return res.summary, res.scenarios, d
 
 

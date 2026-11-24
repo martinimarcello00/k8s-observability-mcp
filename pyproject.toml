@@ -29,3 +29,12 @@ package-mode = false
 [tool.poetry.group.dev.dependencies]
 ipykernel = ">=6.29"
 matplotlib = ">=3.8"
+
+# Orcrist (anomaly/models/orcrist) trains with torch. The CPU build: there is no GPU here, and the CUDA one adds ~3 GB
+[tool.poetry.group.orcrist.dependencies]
+torch = {version = ">=2.6", source = "pytorch-cpu"}
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"

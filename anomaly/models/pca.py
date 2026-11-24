@@ -25,8 +25,8 @@ class PCA:
     features = tuple(f for f in inputs.B0 if f != "restarts")
     params = {"VAR": VAR, "MIN_FINITE": MIN_FINITE, "MIN_SD": MIN_SD}
 
-    def fit(self, X):
-        """X: list of [T, S, len(features)] arrays from inputs.prepare, healthy steps only."""
+    def fit(self, X, val=None, services=None):
+        """X: list of [T, S, len(features)] arrays from inputs.prepare, healthy steps only; val and services unused."""
         A = np.concatenate(X)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN columns: features a service does not have
