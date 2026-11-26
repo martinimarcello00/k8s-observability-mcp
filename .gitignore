@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Optuna studies of anomaly/models/cv.py: local, resumable; trials.csv and choice.json are the record
+results/tuning/**/study.journal*

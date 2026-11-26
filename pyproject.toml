@@ -34,6 +34,10 @@ matplotlib = ">=3.8"
 [tool.poetry.group.orcrist.dependencies]
 torch = {version = ">=2.6", source = "pytorch-cpu"}
 
+# Cross-validation and tuning of the models (anomaly/models/cv.py, the train-* notebooks)
+[tool.poetry.group.tuning.dependencies]
+optuna = ">=4.0"
+
 [[tool.poetry.source]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
