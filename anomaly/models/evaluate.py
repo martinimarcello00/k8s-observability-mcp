@@ -65,11 +65,11 @@ from anomaly import build, inputs
 from anomaly.models import orcrist, pca
 
 
-def make_orcrist(version):
-    """Orcrist at one version. torch is imported here, when an Orcrist model is asked for: the PCA, its notebook and
-    its tests run without it."""
+def make_orcrist(version, **hp):
+    """Orcrist at one version, with parameters hp over its defaults. torch is imported here, when an Orcrist model is
+    asked for: the PCA, its notebook and its tests run without it."""
     from anomaly.models.orcrist.model import Orcrist
-    return Orcrist(version)
+    return Orcrist(version, **hp)
 
 
 MODELS = {"pca": pca.PCA, **{f"orcrist-{v}": partial(make_orcrist, v) for v in orcrist.VERSIONS}}
@@ -268,23 +268,40 @@ def git_state():
     return {"commit": head, "uncommitted_changes": bool(dirty)}
 
 
-def compute(name, app, data):
-    """Everything evaluate writes, kept in memory: the runs (with scores, rules and alarms), the model, the thresholds
-    and the tables. The notebooks draw from it, so their figures follow the same protocol."""
-    runs, model = load(app, data), MODELS[name]()
+def fit(model, train, val):
+    """Fit a model on the loaded steps of the train runs; val may stop its training."""
+    cols = [inputs.B0.index(f) for f in model.features]
+    return model.fit([r.X[r.on][:, :, cols] for r in train], [r.X[r.on][:, :, cols] for r in val], train[0].services)
+
+
+def score_runs(model, runs):
+    """Score each run with a fitted model: per-feature shares (r2) and expected values, the persistent score, the
+    restart rule and, when the model has spread, the deviation and the (raw) state score."""
     cols, R = [inputs.B0.index(f) for f in model.features], inputs.B0.index("restarts")
-    by = lambda *roles: [r for r in runs if r.role in roles]
-    model.fit([r.X[r.on][:, :, cols] for r in by("train")], [r.X[r.on][:, :, cols] for r in by("val")], runs[0].services)
     for r in runs:
         r.P = r.X[:, :, cols]
         r.r2, r.expected = model.score(r.P)
         r.score, r.restart = persist(r.r2.sum(2)), np.nan_to_num(r.X[:, :, R]) > 0
         r.sd, r.state = model.spread(r.P) if hasattr(model, "spread") else (None, None)
-    thr = healthy_max(by("train", "val"), "score")
+
+
+def set_alarms(runs, thr):
+    """Degree (score / threshold [S]), the rules and the alarms of each variant."""
     for r in runs:
         r.norm = r.score / thr
         r.rule = {"model": np.zeros_like(r.restart), "model+restart": r.restart, "model+restart+absence": r.restart | r.absent}
         r.alarm = {v: (r.norm > 1) | r.rule[v] for v in VARIANTS}
+
+
+def compute(name, app, data):
+    """Everything evaluate writes, kept in memory: the runs (with scores, rules and alarms), the model, the thresholds
+    and the tables. The notebooks draw from it, so their figures follow the same protocol."""
+    runs, model = load(app, data), MODELS[name]()
+    by = lambda *roles: [r for r in runs if r.role in roles]
+    fit(model, by("train"), by("val"))
+    score_runs(model, runs)
+    thr = healthy_max(by("train", "val"), "score")
+    set_alarms(runs, thr)
 
     faults = pd.DataFrame([fault_row(r) for r in by("fault-dev", "fault-test") if r.targets])
     summary = pd.DataFrame([summary_row([r for r in runs if r.fold == fold], faults[faults["fold"] == fold], fold, v)

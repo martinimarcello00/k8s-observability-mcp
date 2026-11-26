@@ -29,26 +29,35 @@ from anomaly import inputs
 from anomaly.models.orcrist.versions import VERSIONS
 
 TYPES = ("service", "mongodb", "memcached", "redis")  # the technology, read from the name; the rest are app services
-D, H, K = 4, 32, 4  # embedding size, hidden units (two layers), latent size
+D, H, K = 4, 32, 4  # embedding size, hidden units per layer, latent size
+LAYERS = 2  # hidden layers of the encoder and of the decoder
 SIGMA_MIN = 0.1  # floor of the decoder deviation, in log1p units (the z floor of the feature analysis)
-INSTANCE_DROPOUT = 0.2
-BATCH, LR, MAX_EPOCHS, PATIENCE, KL_WARMUP = 512, 1e-3, 300, 20, 20
+INSTANCE_DROPOUT = 0.2  # type+instance: the instance embedding is dropped with this probability in training
+BETA = 1.0  # weight of the KL in the loss once the warm-up is over (1: the ELBO); early stopping uses it too
+BATCH, LR, WEIGHT_DECAY = 512, 1e-3, 0.0  # Adam
+MAX_EPOCHS, PATIENCE, KL_WARMUP = 300, 20, 20  # epochs; the KL weight grows linearly to BETA over KL_WARMUP epochs
 MIN_FINITE, MIN_SD = 0.95, 1e-6  # a cell enters as in the PCA: finite in this share of training, not flat
 SEED, THREADS = 0, 8
+# The defaults of every parameter; Orcrist(version, **hp) overrides them (the training notebook tunes them)
+HP = {"D": D, "H": H, "K": K, "LAYERS": LAYERS, "SIGMA_MIN": SIGMA_MIN, "INSTANCE_DROPOUT": INSTANCE_DROPOUT,
+      "BETA": BETA, "BATCH": BATCH, "LR": LR, "WEIGHT_DECAY": WEIGHT_DECAY, "MAX_EPOCHS": MAX_EPOCHS,
+      "PATIENCE": PATIENCE, "KL_WARMUP": KL_WARMUP, "MIN_FINITE": MIN_FINITE, "MIN_SD": MIN_SD, "SEED": SEED}
 
 
 def service_type(name):
     return next((t for t in TYPES[1:] if t in name), TYPES[0])
 
 
-def mlp(i, o):
-    return nn.Sequential(nn.Linear(i, H), nn.ReLU(), nn.Linear(H, H), nn.ReLU(), nn.Linear(H, o))
+def mlp(i, o, h, layers):
+    dims = [i] + [h] * layers
+    return nn.Sequential(*[m for a, b in zip(dims, dims[1:]) for m in (nn.Linear(a, b), nn.ReLU())], nn.Linear(dims[-1], o))
 
 
 class Net(nn.Module):
-    def __init__(self, types, n_features, condition, prior, sigma_min):
+    def __init__(self, types, n_features, condition, prior, sigma_min, hp):
         super().__init__()
-        self.kind, self.prior_kind = condition, prior
+        self.kind, self.prior_kind, self.dropout = condition, prior, hp["INSTANCE_DROPOUT"]
+        D, H, K, L = hp["D"], hp["H"], hp["K"], hp["LAYERS"]
         self.register_buffer("types", torch.as_tensor(types))
         self.register_buffer("sigma_min", torch.as_tensor(sigma_min, dtype=torch.float32))
         if condition == "onehot":
@@ -59,7 +68,7 @@ class Net(nn.Module):
             if condition == "type+instance":
                 self.tech = nn.Embedding(len(TYPES), D)
             d = D
-        self.enc, self.dec = mlp(n_features + d, 2 * K), mlp(K + d, 2 * n_features)
+        self.enc, self.dec = mlp(n_features + d, 2 * K, H, L), mlp(K + d, 2 * n_features, H, L)
         if prior == "service":
             self.prior = nn.Linear(d, 2 * K)
 
@@ -69,7 +78,7 @@ class Net(nn.Module):
         e = self.instance(s)
         if self.kind == "type+instance":
             if self.training:
-                e = e * (torch.rand(len(s), 1) >= INSTANCE_DROPOUT)
+                e = e * (torch.rand(len(s), 1) >= self.dropout)
             e = e + self.tech(self.types[s])
         return e
 
@@ -87,19 +96,22 @@ class Net(nn.Module):
 
 
 def loss(net, x, m, s, beta):
-    """Gaussian negative log-likelihood of the cells in the model, plus beta times the KL; mean over samples."""
+    """Gaussian negative log-likelihood of the cells in the model, plus beta times the KL; mean over samples.
+    -> (loss, its NLL, its KL per latent dimension), the last two detached, to follow the training."""
     mx, sx, kl, _ = net(x, s)
-    return ((m * (sx.log() + 0.5 * ((x - mx) / sx) ** 2)).sum(1) + beta * kl.sum(1)).mean()
+    nll, k = (m * (sx.log() + 0.5 * ((x - mx) / sx) ** 2)).sum(1), kl.sum(1)
+    return (nll + beta * k).mean(), nll.detach().mean(), kl.detach().mean(0)
 
 
 class Orcrist:
     features = tuple(f for f in inputs.B0 if f != "restarts")
+    on_epoch = None  # called with each epoch's row of history during fit: the training notebook watches it live
 
-    def __init__(self, version):
+    def __init__(self, version, **hp):
+        if set(hp) - set(HP):
+            raise ValueError(f"unknown Orcrist parameters {sorted(set(hp) - set(HP))}, known: {list(HP)}")
         self.version = version
-        self.params = {"version": version, **VERSIONS[version], "D": D, "H": H, "K": K, "SIGMA_MIN": SIGMA_MIN,
-                       "INSTANCE_DROPOUT": INSTANCE_DROPOUT, "BATCH": BATCH, "LR": LR, "MAX_EPOCHS": MAX_EPOCHS,
-                       "PATIENCE": PATIENCE, "KL_WARMUP": KL_WARMUP, "MIN_FINITE": MIN_FINITE, "MIN_SD": MIN_SD, "SEED": SEED}
+        self.params = {"version": version, **VERSIONS[version], **HP, **hp}
 
     def _samples(self, A, drop_empty=False):
         """[T, S, F] -> (x, cells in the model and finite, service) of the T*S samples, x standardized, 0 where not.
@@ -113,48 +125,63 @@ class Orcrist:
         return x[keep], m[keep], s[keep]
 
     def fit(self, X, val, services):
-        """X, val: lists of [T, S, len(features)] arrays from inputs.prepare, healthy loaded steps; val stops training."""
-        torch.manual_seed(SEED)
+        """X, val: lists of [T, S, len(features)] arrays from inputs.prepare, healthy loaded steps; val stops training.
+        self.history: one row per epoch (the KL weight, the training loss with its NLL and KL as trained, the val
+        loss with its NLL and KL, the active latent dimensions on val, the seconds so far)."""
+        p = self.params
+        torch.manual_seed(p["SEED"])
         torch.set_num_threads(THREADS)
-        rng = np.random.default_rng(SEED)
+        rng = np.random.default_rng(p["SEED"])
         A = np.concatenate(X)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN cells: features a service does not have
             self.mu, sd = np.nanmean(A, (0, 1)), np.nanstd(A, (0, 1))
-            self.cols = (np.isfinite(A).mean(0) >= MIN_FINITE) & (np.nan_to_num(np.nanstd(A, 0)) > MIN_SD)
-        self.sd = np.where(sd > MIN_SD, sd, 1.0)
-        self.net = Net([TYPES.index(service_type(s)) for s in services], len(self.features),
-                       VERSIONS[self.version]["condition"], VERSIONS[self.version]["prior"], SIGMA_MIN / self.sd)
+            self.cols = (np.isfinite(A).mean(0) >= p["MIN_FINITE"]) & (np.nan_to_num(np.nanstd(A, 0)) > p["MIN_SD"])
+        self.sd = np.where(sd > p["MIN_SD"], sd, 1.0)
+        self.net = Net([TYPES.index(service_type(s)) for s in services], len(self.features), p["condition"], p["prior"],
+                       p["SIGMA_MIN"] / self.sd, p)
         tx, tm, ts = self._samples(A, drop_empty=True)
         vx, vm, vs = self._samples(np.concatenate(val), drop_empty=True)
-        opt = torch.optim.Adam(self.net.parameters(), lr=LR)
-        best, history, start = (math.inf, 0, None), [], time.time()
-        for epoch in range(MAX_EPOCHS):
+        opt = torch.optim.Adam(self.net.parameters(), lr=p["LR"], weight_decay=p["WEIGHT_DECAY"])
+        best, self.history, start = (math.inf, 0, None), [], time.time()
+        for epoch in range(p["MAX_EPOCHS"]):
             self.net.train()
-            beta = min(1.0, (epoch + 1) / KL_WARMUP)
-            for i in np.array_split(rng.permutation(len(tx)), math.ceil(len(tx) / BATCH)):
+            beta = min(1.0, (epoch + 1) / max(p["KL_WARMUP"], 1)) * p["BETA"]
+            run = np.zeros(3)
+            for i in np.array_split(rng.permutation(len(tx)), math.ceil(len(tx) / p["BATCH"])):
                 opt.zero_grad()
-                loss(self.net, tx[i], tm[i], ts[i], beta).backward()
+                total, nll, kl = loss(self.net, tx[i], tm[i], ts[i], beta)
+                total.backward()
                 opt.step()
+                run += len(i) * np.array([float(total.detach()), float(nll), float(kl.sum())])
             self.net.eval()
             with torch.no_grad():
-                v = float(loss(self.net, vx, vm, vs, 1.0))
-            history.append(v)
+                total, nll, kl = loss(self.net, vx, vm, vs, p["BETA"])
+                v = float(total)
+            row = {"epoch": epoch + 1, "beta": beta, **dict(zip(("train_loss", "train_nll", "train_kl"), run / len(tx))),
+                   "val_loss": v, "val_nll": float(nll), "val_kl": float(kl.sum()),
+                   "active_dims": int((kl > 0.01).sum()), "seconds": round(time.time() - start, 2)}
+            self.history.append(row)
+            if self.on_epoch:
+                self.on_epoch(row)
             if v < best[0]:
                 best = (v, epoch, copy.deepcopy(self.net.state_dict()))
-            elif epoch - best[1] >= PATIENCE and epoch >= KL_WARMUP:
+            elif epoch - best[1] >= p["PATIENCE"] and epoch >= p["KL_WARMUP"]:
                 break
+        if best[2] is None:
+            raise FloatingPointError(f"the val loss was never finite: {self.params}")
+        history = [h["val_loss"] for h in self.history]
         self.net.load_state_dict(best[2])
         self.net.eval()
         with torch.no_grad():
             _, sx, kl, _ = self.net(tx, ts)
-            train_loss = float(loss(self.net, tx, tm, ts, 1.0))
+            train_loss = float(loss(self.net, tx, tm, ts, p["BETA"])[0])
         S = len(services)
         self.sigma = np.array([(sx[ts == i] * torch.as_tensor(self.sd, dtype=torch.float32)).mean(0).numpy() for i in range(S)])
         self.kl_dims = np.array([kl[ts == i].mean(0).numpy() for i in range(S)])
         self.params.update(epochs=len(history), best_epoch=best[1] + 1, val_loss=round(best[0], 4),
                            train_loss=round(train_loss, 4), seconds=round(time.time() - start, 1),
-                           parameters=sum(p.numel() for p in self.net.parameters()),
+                           parameters=sum(w.numel() for w in self.net.parameters()),
                            active_dims=int((kl.mean(0) > 0.01).sum()), val_curve=[round(h, 4) for h in history])
         return self
 
@@ -164,6 +191,7 @@ class Orcrist:
         with torch.no_grad():
             mx, sx, kl, mq = self.net(x, s)
         T, S, Fn = X.shape
+        K = self.params["K"]
         return (x.numpy().reshape(T, S, Fn), m.numpy().reshape(T, S, Fn).astype(bool), mx.numpy().reshape(T, S, Fn),
                 sx.numpy().reshape(T, S, Fn), kl.numpy().reshape(T, S, K), mq.numpy().reshape(T, S, K))
 

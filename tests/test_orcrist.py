@@ -6,7 +6,6 @@ import numpy as np
 from anomaly.models import evaluate as ev, orcrist
 from anomaly.models.orcrist import model as om
 
-om.MAX_EPOCHS = 120
 rng = np.random.default_rng(0)
 F = len(om.Orcrist.features)
 names = ["frontend", "mongodb-geo", "memcached-rate"]
@@ -26,8 +25,9 @@ def runs(T):
 
 
 X, V = runs(3000), runs(600)
+sizes = {}
 for version in orcrist.VERSIONS:
-    m = om.Orcrist(version).fit([X], [V], names)
+    m = om.Orcrist(version, MAX_EPOCHS=120).fit([X], [V], names)
     assert not m.cols[1, F - 1] and m.cols[0].all()  # the flat cell is left out
     assert m.card(names)["mongodb-geo"]["left_out"] == [m.features[F - 1]]
 
@@ -47,5 +47,20 @@ for version in orcrist.VERSIONS:
     top = ev.why(r, 3, 0, list(m.features))[0]
     assert top["feature"] == m.features[4] and top["direction"] == "up"
     assert top["normal"][0] <= top["expected"] <= top["normal"][1] < top["observed"]
+    sizes[version] = m.params["parameters"]
     print(version, m.params["best_epoch"], m.params["parameters"], round(float(r2[3, 0].sum() / healthy), 1))
+
+# --- every parameter is per instance: other sizes, depth, KL weight and weight decay train; the history has one row per
+#     epoch and the callback sees each; an unknown parameter is refused
+rows = []
+m = om.Orcrist("AC", MAX_EPOCHS=30, K=2, H=16, LAYERS=3, BETA=0.5, WEIGHT_DECAY=1e-4, KL_WARMUP=5, PATIENCE=5)
+m.on_epoch = rows.append
+m.fit([X], [V], names)
+assert len(m.history) == len(rows) == m.params["epochs"] and rows[-1]["beta"] == 0.5
+assert m.latent(V[:3])[0].shape == (3, 3, 2) and m.params["parameters"] != sizes["AC"]
+try:
+    om.Orcrist("AA", LAYER=3)
+    raise AssertionError("an unknown parameter was accepted")
+except ValueError:
+    pass
 print("ok")
